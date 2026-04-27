@@ -10,15 +10,10 @@ const validateRequest = (schema) => (req, res, next) => {
       message: err.message,
     }));
 
-    // Log the validation errors for debugging purposes
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: errors[0].message,
-        code: "VALIDATION_ERROR",
-        fields: errors,
-      },
-    });
+    const error = new Error(errors[0].message);
+    error.statusCode = 400;
+    error.code = "VALIDATION_ERROR";
+    return next(error);
   }
 
   // If validation succeeds, proceed with the parsed and validated data

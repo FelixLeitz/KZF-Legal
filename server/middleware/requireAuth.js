@@ -10,13 +10,10 @@ const requireAuth = (req, res, next) => {
 
     // If no user is found, return a 401 Unauthorized response
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: "Unauthorized: Invalid or missing session token",
-          code: "AUTH_INVALID_TOKEN",
-        },
-      });
+      const error = new Error("Unauthorized: Invalid or missing token");
+      error.statusCode = 401;
+      error.code = "AUTH_INVALID_TOKEN";
+      return next(error);
     }
 
     // Attach the authenticated user to the request object for downstream use

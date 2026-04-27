@@ -2,7 +2,7 @@ const logger = require("../utils/logger");
 
 const errorHandler = (err, req, res, next) => {
     // Log the full error internally
-    logger.error({ err }, err.message)
+    // logger.error({ err }, err.message)
 
     // Default to 500 Internal Server Error if statusCode is not set
     const statusCode = err.statusCode || 500
@@ -21,6 +21,9 @@ const errorHandler = (err, req, res, next) => {
         error: {
             message,
             code,
+            // Include fields if they exist (e.g. from validation errors)
+            ...(err.fields && { fields: err.fields }),
+            // Include the stack trace in development for debugging, but never in production
             ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
         }
     })
