@@ -9,13 +9,10 @@ const requireAdmin = (req, res, next) => {
 
     // Check the authenticated user's role
     if (req.user && req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        error: {
-          message: "Forbidden: Admin access required",
-          code: "FORBIDDEN",
-        },
-      });
+      const error = new Error("Forbidden: Admin access required");
+      error.statusCode = 403;
+      error.code = "FORBIDDEN";
+      return next(error);
     }
 
     next();
