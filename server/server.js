@@ -1,5 +1,6 @@
 const config = require("./config/env");
 const app = require("./app");
+const logger = require("./utils/logger");
 const connectDB = require("./config/database");
 
 const PORT = config.PORT;
@@ -9,9 +10,9 @@ const startServer = async () => {
   await connectDB();
 
   app.listen(PORT, () => {
-    console.log(`Environment: ${config.NODE_ENV}`);
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    logger.info(`Environment: ${config.NODE_ENV}`);
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Health check: http://localhost:${PORT}/api/health`);
   });
 };
 
