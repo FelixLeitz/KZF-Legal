@@ -12,7 +12,7 @@ const createUserAndToken = async (overrides = {}) => {
 
   const token = jwt.sign(
     {
-      userId: user._id,
+      id: user._id,
       role: user.role
     },
     config.JWT_SECRET,
@@ -35,7 +35,7 @@ const createAdminAndToken = async (overrides = {}) => {
 const generateExpiredToken = () => {
   return jwt.sign(
     {
-      userId: '661f1e2b3c4d5e6f7a8b9c0d',
+      id: '661f1e2b3c4d5e6f7a8b9c0d',
       role: 'user'
     },
     config.JWT_SECRET,
@@ -47,7 +47,7 @@ const generateExpiredToken = () => {
 const generateInvalidToken = () => {
   return jwt.sign(
     {
-      userId: '661f1e2b3c4d5e6f7a8b9c0d',
+      id: '661f1e2b3c4d5e6f7a8b9c0d',
       role: 'user'
     },
     'wrong_secret',

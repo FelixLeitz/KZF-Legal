@@ -49,7 +49,8 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 // Method to return safe user object not containing the password
 userSchema.methods.toSafeObject = function () {
   return {
-    userId: this._id,
+    // Convert MongoDB ObjectId to string for easier handling on the client side (does not interfere with Mongoose's internal handling of _id)
+    id: this._id.toString(),
     email: this.email,
     role: this.role,
     // Automatically created by fields from mongoose when timestamps: true is set
