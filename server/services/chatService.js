@@ -12,7 +12,7 @@ const createPendingMessage = async (userId, query, chatId) => {
         if (!mongoose.Types.ObjectId.isValid(chatId)) {
             const error = new Error("Invalid chatId format");
             error.statusCode = 404;
-            error.code = "CHAT_NOT_FOUND";
+            error.code = "NOT_FOUND";
             throw error;
         }
 
@@ -23,7 +23,7 @@ const createPendingMessage = async (userId, query, chatId) => {
         if (!chat) {
             const error = new Error("Chat not found");
             error.statusCode = 404;
-            error.code = "CHAT_NOT_FOUND";
+            error.code = "NOT_FOUND";
             throw error;
         }
 
