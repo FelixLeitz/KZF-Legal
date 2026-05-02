@@ -28,7 +28,7 @@ const loginUser = async (user) => {
   // User is already authenticated at this point, so we can directly sign and return a JWT token
   const token = jwt.sign(
     {
-      userId: user.userId,
+      id: user._id,
       role: user.role,
     },
     config.JWT_SECRET,
