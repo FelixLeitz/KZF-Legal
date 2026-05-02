@@ -1,5 +1,6 @@
 const { createPendingMessage, processQuery } = require("../services/chatService");
 
+// Handle incoming chat queries from the client
 const postChat = async (req, res, next) => {
     try {
         // Extract query and optional chatId from the request body

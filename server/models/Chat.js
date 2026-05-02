@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Message = require("./Message");
 
 const chatSchema = new mongoose.Schema(
   {
@@ -26,6 +27,13 @@ const chatSchema = new mongoose.Schema(
 
 // Provides fast retrieval of a user's chats sorted by recent activity
 chatSchema.index({ user: 1, lastMessageAt: -1 });
+
+// Delete all messages associated with a chat when the chat is deleted to maintain data integrity and prevent orphaned messages.
+chatSchema.post("findOneAndDelete", async function (deletedChat) {
+  if (deletedChat) {
+    await Message.deleteMany({ chat: deletedChat._id });
+  }
+});
 
 const Chat = mongoose.model("Chat", chatSchema);
 
