@@ -21,6 +21,15 @@ const documentSchema = new mongoose.Schema(
     extractedText: { type: String }, 
     // Prevent duplicate uploads by storing a checksum of the file content
     checksum: { type: String, index: true }, 
+    // Tracks the ingestion lifecycle of the document in the RAG pipeline
+    status: {
+      type: String,
+      enum: ["pending", "processing", "ingested", "failed"],
+      default: "pending",
+      index: true,
+    },
+    // Stores the reason for failure if ingestion fails
+    errorMessage: { type: String },
   },
   { timestamps: true },
 );
