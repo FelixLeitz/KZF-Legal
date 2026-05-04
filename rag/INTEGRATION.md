@@ -1,94 +1,198 @@
-# RAG Integration Contract (BE + FE)
+# RAG Integration Contract (BE + FE) — v2
 
-This file defines the handoff contract between the Backend team and RAG service.
-RAG is consumed as a Node module: `const ragService = require("../rag")`.
+This contract defines how Backend (BE), Frontend (FE), and RAG communicate.
 
-## 1) Backend bootstrap (`server/server.js`)
+## 1) Ownership Scope
 
-```js
-const { Server } = require("socket.io");
-const ragService = require("../rag");
+### RAG owns
 
-const io = new Server(httpServer, {
-  cors: { origin: config.ALLOWED_ORIGINS.split(","), credentials: true },
-});
+- Document text extraction/parsing (file -> text)
+- Chunking, embedding, indexing
+- Retrieval (vector + web), context assembly
+- Answer generation + citations
+- Returning structured results to BE
 
-io.use(authSocketJWT); // backend-owned
-io.on("connection", (socket) => {
-  socket.join(`user:${socket.user.id}`);
-});
+### Backend owns
 
-ragService.init({ io });
-```
+- Auth, validation, chat/message/document IDs
+- Database persistence + status transitions
+- Socket rooms/events to FE
+- Async orchestration (queue/worker/retry/timeout)
 
-## 2) Query endpoint contract (`POST /api/chat`)
+### Frontend owns
 
-Backend calls:
+- Send HTTP requests
+- Render pending/completed/failed states
 
-```js
-const { queryId } = await ragService.submitQuery({
-  userId: req.user.id,
-  question: req.body.question,
-});
+Listen to BE socket events
 
-res.status(202).json({ queryId });
-```
 
-### Expected behavior
 
-- HTTP returns immediately with `202`.
-- Final answer is delivered asynchronously through Socket.io event `query:result`.
-- On failure, RAG emits `query:error` to the same user room.
+---
 
-## 3) Socket event contract for FE
+## 2) Query Flow (Chat)
 
-### `query:result`
+### FE -> BE
+
+`POST /api/chat`
 
 ```json
 {
-  "queryId": "uuid",
-  "answer": "text answer with [1], [2] citations",
+  "query": "What visa options do I have?",
+  "chatId": "optional",
+  "documentIds": ["optional"]
+}
+BE immediate response
+202 Accepted
+
+{
+  "success": true,
+  "data": {
+    "chatId": "mongoId",
+    "messageId": "mongoId",
+    "status": "pending"
+  }
+}
+BE -> RAG internal call
+const result = await ragService.submitQuery({
+  userId,
+  question: query,
+  documentIds
+});
+RAG -> BE return shape
+{
+  "answer": "string",
   "citations": [
     {
       "id": 1,
       "title": "Source title",
       "source": "vector|web",
       "url": "https://example.com",
-      "snippet": "supporting text"
+      "snippet": "supporting text",
+      "documentRef": "optional mongo id"
     }
   ],
-  "latencyMs": 1234
+  "meta": {
+    "latencyMs": 1234,
+    "model": "claude-3-5-haiku-latest",
+    "retrieval": {
+      "vectorHits": 4,
+      "webHits": 2
+    }
+  }
 }
-```
 
-### `query:error`
+BE persistence rules
+On accept: create Message with status: "pending"
+On success:
+write response.answer, response.citations
+write meta.* (if present)
+set status: "completed"
+On failure: set status: "failed"
 
-```json
+3) Socket Contract (BE -> FE only)
+Emit to room user:{userId}.
+
+Event: chat:updated (single event, all states)
+Pending
 {
-  "queryId": "uuid",
-  "message": "Unable to generate answer",
-  "code": "RAG_ERROR"
+  "eventVersion": 1,
+  "chatId": "mongoId",
+  "messageId": "mongoId",
+  "status": "pending"
 }
-```
+Completed
+{
+  "eventVersion": 1,
+  "chatId": "mongoId",
+  "messageId": "mongoId",
+  "status": "completed",
+  "response": {
+    "answer": "string",
+    "citations": []
+  },
+  "meta": {
+    "latencyMs": 1234,
+    "model": "string"
+  }
+}
+Failed
+{
+  "eventVersion": 1,
+  "chatId": "mongoId",
+  "messageId": "mongoId",
+  "status": "failed",
+  "error": {
+    "code": "RAG_ERROR",
+    "message": "Unable to process query"
+  }
+}
 
-## 4) Document ingestion contract
+4) Document Ingestion Flow
+FE -> BE
+POST /api/documents (multipart upload)
 
-Backend can index user-uploaded documents:
+BE immediate response
+202 Accepted
 
-```js
-await ragService.ingestDocument({
-  userId: req.user.id,
-  docId: documentId,
-  text: extractedText,
+{
+  "success": true,
+  "data": {
+    "documentId": "mongoId",
+    "chatId": "mongoId",
+    "status": "pending"
+  }
+}
+
+BE -> RAG internal call
+const ingest = await ragService.ingestDocument({
+  userId,
+  documentId,
+  filePath,   // preferred
+  mimeType
 });
+RAG -> BE return shape
+{
+  "chunks": 42,
+  "extractedSummary": "optional",
+  "meta": {
+    "ingestMs": 980
+  }
+}
+BE behavior
+Update document status: pending -> processing -> ingested|failed
+Emit document:updated with same eventVersion pattern
+
+5) Error Contract (RAG -> BE)
+RAG throws typed errors:
+{
+  "code": "RAG_VALIDATION_ERROR|RAG_UPSTREAM_ERROR|RAG_TIMEOUT|RAG_INTERNAL",
+  "message": "human readable",
+  "retryable": true
+}
+BE maps to safe FE errors + DB status updates.
+
+6) Data Consistency Rules (Mandatory)
+Message.status only: pending | completed | failed
+Response fields only under:
+Message.response.answer
+Message.response.citations
+No top-level answer/citations writes
+No mixed legacy event names
+
+7) Migration Notes
+Deprecated:
+query:result, query:error
+chat:response, chat:error
+RAG Socket.io emission (init({ io }) style coupling)
+
+Target:
+BE-only emit: chat:updated, document:updated
+RAG pure function/service returns structured data
+
+8) Minimum Tests Required
+RAG unit contract tests (submitQuery, ingestDocument return shapes)
+BE integration tests (DB update + socket emit on success/failure)
+E2E async chat test (POST /api/chat -> socket chat:updated)
 ```
 
-Behavior:
-
-- User document chunks are stored under namespace `user:{userId}`.
-- Query retrieval reads both `global` corpus + user namespace.
-
-## 5) Contract safety
-
-- Event and API schemas are defined in `rag/schemas/`.
-- Contract tests in `tests/rag/contract.test.js` validate emitted payload shapes.

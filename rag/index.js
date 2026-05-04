@@ -1,26 +1,29 @@
+const fs = require("fs");
 const path = require("path");
-const { randomUUID } = require("crypto");
 const { chunkText } = require("./chunker");
 const { embedChunks } = require("./embedder");
 const { retrieveWebContext } = require("./webRetriever");
 const { buildContext } = require("./contextBuilder");
-const { generateAnswer } = require("./generator");
+const { generateAnswer, MODEL } = require("./generator");
 const { createVectorStore } = require("./vectorStore");
 const { ingestText } = require("./pipeline");
 const {
   SubmitQueryInputSchema,
   SubmitQueryResponseSchema,
   IngestDocumentInputSchema,
+  IngestDocumentResponseSchema,
 } = require("./schemas/api");
-const { QueryResultEventSchema, QueryErrorEventSchema } = require("./schemas/events");
 
-const state = {
-  io: null,
+const _defaultFns = {
   chunker: chunkText,
   embedder: embedChunks,
   webRetriever: retrieveWebContext,
   contextBuilder: buildContext,
   generator: generateAnswer,
+};
+
+const state = {
+  ..._defaultFns,
   vectorStore: createVectorStore({
     persistPath: path.join(__dirname, "data", "vectors.json"),
   }),
@@ -28,108 +31,107 @@ const state = {
 
 state.vectorStore.load();
 
-function init({ io } = {}) {
-  state.io = io || null;
+function init() {
   return { ready: true };
 }
 
-async function ingestDocument({ userId, docId, text }) {
-  const input = IngestDocumentInputSchema.parse({ userId, docId, text });
-  const namespace = userId ? `user:${userId}` : "global";
+function makeRagError(code, message, retryable = false) {
+  const err = new Error(message);
+  err.code = code;
+  err.retryable = retryable;
+  return err;
+}
+
+async function ingestDocument({ userId, documentId, filePath, mimeType }) {
+  const input = IngestDocumentInputSchema.parse({ userId, documentId, filePath, mimeType });
+  const startedAt = Date.now();
+
+  let text;
+  try {
+    text = fs.readFileSync(input.filePath, "utf8");
+  } catch (err) {
+    throw makeRagError("RAG_VALIDATION_ERROR", `Cannot read file: ${err.message}`, false);
+  }
+
+  const namespace = `user:${input.userId}`;
   const chunks = await ingestText({
-    text: input.text,
-    sourceId: input.docId || randomUUID(),
+    text,
+    sourceId: input.documentId,
     namespace,
     vectorStore: state.vectorStore,
     chunker: state.chunker,
     embedder: state.embedder,
-    metadata: { userId: input.userId || null },
+    metadata: { userId: input.userId, documentId: input.documentId },
   });
   state.vectorStore.save();
-  return { chunks };
+
+  return IngestDocumentResponseSchema.parse({
+    chunks,
+    extractedSummary: null,
+    meta: { ingestMs: Date.now() - startedAt },
+  });
 }
 
-function emitUserEvent(userId, eventName, payload) {
-  if (!state.io) {
-    return;
-  }
-  state.io.to(`user:${userId}`).emit(eventName, payload);
-}
+async function submitQuery({ userId, question, documentIds }) {
+  const input = SubmitQueryInputSchema.parse({ userId, question, documentIds });
+  const startedAt = Date.now();
 
-async function processQuery({ queryId, userId, question, startedAt }) {
+  let embeddedQuestion;
   try {
-    const embeddedQuestion = await state.embedder([question]);
-    const queryVector = embeddedQuestion[0]?.vector || [];
-    const vectorHits = state.vectorStore.search({
-      queryVector,
-      limit: 4,
-      namespaces: ["global", `user:${userId}`],
-    });
-    const webResults = await state.webRetriever(question);
-    const { contextText, citations } = state.contextBuilder({ vectorHits, webResults });
-    const answer = await state.generator({ question, contextText });
-
-    const resultPayload = QueryResultEventSchema.parse({
-      queryId,
-      answer,
-      citations,
-      latencyMs: Date.now() - startedAt,
-    });
-    emitUserEvent(userId, "query:result", resultPayload);
-  } catch (error) {
-    const errorPayload = QueryErrorEventSchema.parse({
-      queryId,
-      message: error.message || "Unable to process query",
-      code: "RAG_ERROR",
-    });
-    emitUserEvent(userId, "query:error", errorPayload);
+    embeddedQuestion = await state.embedder([input.question]);
+  } catch (err) {
+    throw makeRagError("RAG_UPSTREAM_ERROR", "Embedding service unavailable", true);
   }
-}
 
-async function submitQuery({ userId, question }) {
-  const input = SubmitQueryInputSchema.parse({ userId, question });
-  const queryId = randomUUID();
-  const response = SubmitQueryResponseSchema.parse({ queryId });
-
-  setImmediate(() => {
-    processQuery({
-      queryId,
-      userId: input.userId,
-      question: input.question,
-      startedAt: Date.now(),
-    });
+  const queryVector = embeddedQuestion[0]?.vector || [];
+  const vectorHits = state.vectorStore.search({
+    queryVector,
+    limit: 4,
+    namespaces: ["global", `user:${input.userId}`],
   });
 
-  return response;
+  let webResponse;
+  try {
+    webResponse = await state.webRetriever(input.question);
+  } catch {
+    webResponse = { sources: [] };
+  }
+  const webResults = webResponse.sources || [];
+
+  const { contextText, citations } = state.contextBuilder({ vectorHits, webResults });
+
+  let answer;
+  try {
+    answer = await state.generator({ question: input.question, contextText });
+  } catch (err) {
+    throw makeRagError("RAG_UPSTREAM_ERROR", "LLM service unavailable", true);
+  }
+
+  return SubmitQueryResponseSchema.parse({
+    answer,
+    citations,
+    meta: {
+      latencyMs: Date.now() - startedAt,
+      model: MODEL,
+      retrieval: {
+        vectorHits: vectorHits.length,
+        webHits: webResults.length,
+      },
+    },
+  });
 }
 
 function __setState(nextState = {}) {
-  if (Object.hasOwn(nextState, "io")) {
-    state.io = nextState.io;
-  }
-  if (Object.hasOwn(nextState, "vectorStore")) {
-    state.vectorStore = nextState.vectorStore;
-  }
-  if (Object.hasOwn(nextState, "chunker")) {
-    state.chunker = nextState.chunker;
-  }
-  if (Object.hasOwn(nextState, "embedder")) {
-    state.embedder = nextState.embedder;
-  }
-  if (Object.hasOwn(nextState, "webRetriever")) {
-    state.webRetriever = nextState.webRetriever;
-  }
-  if (Object.hasOwn(nextState, "contextBuilder")) {
-    state.contextBuilder = nextState.contextBuilder;
-  }
-  if (Object.hasOwn(nextState, "generator")) {
-    state.generator = nextState.generator;
+  const keys = ["vectorStore", "chunker", "embedder", "webRetriever", "contextBuilder", "generator"];
+  for (const key of keys) {
+    if (Object.hasOwn(nextState, key)) {
+      state[key] = nextState[key];
+    }
   }
 }
 
-module.exports = {
-  init,
-  ingestDocument,
-  submitQuery,
-  __setState,
-};
+function __resetState() {
+  Object.assign(state, _defaultFns);
+}
+
+module.exports = { init, ingestDocument, submitQuery, __setState, __resetState };
