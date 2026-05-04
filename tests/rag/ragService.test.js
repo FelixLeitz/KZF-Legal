@@ -1,88 +1,144 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const { expect } = require("chai");
 const sinon = require("sinon");
 const ragService = require("../../rag");
 
-describe("rag/index", () => {
-  let clock;
-
-  beforeEach(() => {
-    clock = sinon.useFakeTimers();
-  });
-
+describe("ragService (v2)", () => {
   afterEach(() => {
-    ragService.__setState({ io: null });
-    clock.restore();
+    ragService.__resetState();
   });
 
-  it("initializes with io instance", () => {
-    const io = {};
-    const result = ragService.init({ io });
-    expect(result.ready).to.equal(true);
+  describe("init", () => {
+    it("returns ready:true", () => {
+      expect(ragService.init().ready).to.equal(true);
+    });
+
+    it("ignores io argument (v2 — BE owns sockets)", () => {
+      expect(ragService.init({ io: {} }).ready).to.equal(true);
+    });
   });
 
-  it("ingests user document into user namespace", async () => {
-    const vectorStore = {
-      upsert: sinon.stub().returns(1),
-      save: sinon.stub(),
-    };
-    ragService.__setState({
-      vectorStore,
-      chunker: sinon.stub().returns(["visa text"]),
-      embedder: sinon.stub().resolves([{ id: 0, chunk: "visa text", vector: [1, 0] }]),
+  describe("ingestDocument", () => {
+    let tmpFile;
+
+    beforeEach(() => {
+      tmpFile = path.join(os.tmpdir(), `rag-test-${Date.now()}.txt`);
+      fs.writeFileSync(tmpFile, "visa subclass 500 requirements text");
     });
 
-    const result = await ragService.ingestDocument({
-      userId: "u1",
-      docId: "doc-1",
-      text: "visa text",
+    afterEach(() => {
+      if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
     });
 
-    expect(result.chunks).to.be.greaterThan(0);
-    expect(vectorStore.upsert.called).to.equal(true);
-    expect(vectorStore.save.calledOnce).to.equal(true);
+    it("ingests a file and returns chunks + meta", async () => {
+      const vectorStore = { upsert: sinon.stub(), save: sinon.stub() };
+      ragService.__setState({
+        vectorStore,
+        chunker: sinon.stub().returns(["visa text"]),
+        embedder: sinon.stub().resolves([{ chunk: "visa text", vector: [1, 0] }]),
+      });
+
+      const result = await ragService.ingestDocument({
+        userId: "u1",
+        documentId: "doc-1",
+        filePath: tmpFile,
+        mimeType: "text/plain",
+      });
+
+      expect(result.chunks).to.equal(1);
+      expect(result.meta).to.have.property("ingestMs");
+      expect(vectorStore.save.calledOnce).to.equal(true);
+    });
+
+    it("throws RAG_VALIDATION_ERROR when file does not exist", async () => {
+      try {
+        await ragService.ingestDocument({
+          userId: "u1",
+          documentId: "doc-1",
+          filePath: "/nonexistent/path.txt",
+          mimeType: "text/plain",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err.code).to.equal("RAG_VALIDATION_ERROR");
+        expect(err.retryable).to.equal(false);
+      }
+    });
   });
 
-  it("returns queryId for submitQuery stub", async () => {
-    const emit = sinon.stub();
-    const io = { to: sinon.stub().returns({ emit }) };
-    ragService.init({ io });
-    ragService.__setState({
-      embedder: sinon.stub().resolves([{ vector: [1, 0], chunk: "question" }]),
-      vectorStore: {
-        search: sinon.stub().returns([{ chunk: "doc chunk", score: 0.9, metadata: { sourceId: "doc-a" }]),
-      },
-      webRetriever: sinon.stub().resolves([]),
-      contextBuilder: sinon.stub().returns({
-        contextText: "[1] doc chunk",
-        citations: [{ id: 1, title: "doc-a", source: "vector", snippet: "doc chunk" }],
-      }),
-      generator: sinon.stub().resolves("Answer [1]"),
+  describe("submitQuery", () => {
+    it("returns answer, citations, and meta", async () => {
+      ragService.__setState({
+        embedder: sinon.stub().resolves([{ vector: [1, 0], chunk: "question" }]),
+        vectorStore: {
+          search: sinon.stub().returns([{
+            id: "doc:0",
+            chunk: "subclass 500 info",
+            score: 0.9,
+            metadata: { sourceId: "doc-a" },
+            namespace: "global",
+            vector: [],
+          }]),
+        },
+        webRetriever: sinon.stub().resolves({ query: "q", sources: [] }),
+        contextBuilder: sinon.stub().returns({
+          contextText: "[1] subclass 500 info",
+          citations: [{ id: 1, title: "doc-a", source: "vector", snippet: "subclass 500 info" }],
+        }),
+        generator: sinon.stub().resolves("You need X for subclass 500 [1]"),
+      });
+
+      const result = await ragService.submitQuery({
+        userId: "u1",
+        question: "What are subclass 500 requirements?",
+      });
+
+      expect(result.answer).to.be.a("string");
+      expect(result.citations).to.be.an("array").with.length(1);
+      expect(result.meta.retrieval.vectorHits).to.equal(1);
+      expect(result.meta.retrieval.webHits).to.equal(0);
+      expect(result.meta).to.have.property("model");
+      expect(result.meta).to.have.property("latencyMs");
     });
 
-    const result = await ragService.submitQuery({
-      userId: "u1",
-      question: "What are subclass 500 requirements?",
-    });
-    expect(result.queryId).to.be.a("string");
-    await clock.runAllAsync();
-    expect(io.to.calledWith("user:u1")).to.equal(true);
-    expect(emit.calledWith("query:result")).to.equal(true);
-  });
+    it("throws RAG_UPSTREAM_ERROR when embedding fails", async () => {
+      ragService.__setState({
+        embedder: sinon.stub().rejects(new Error("OpenAI unreachable")),
+      });
 
-  it("emits query:error when processing fails", async () => {
-    const emit = sinon.stub();
-    const io = { to: sinon.stub().returns({ emit }) };
-    ragService.init({ io });
-    ragService.__setState({
-      embedder: sinon.stub().rejects(new Error("embedding failed")),
+      try {
+        await ragService.submitQuery({
+          userId: "u1",
+          question: "Can I extend my visa?",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err.code).to.equal("RAG_UPSTREAM_ERROR");
+        expect(err.retryable).to.equal(true);
+      }
     });
 
-    const result = await ragService.submitQuery({
-      userId: "u1",
-      question: "Can I extend my visa?",
+    it("throws RAG_UPSTREAM_ERROR when generator fails", async () => {
+      ragService.__setState({
+        embedder: sinon.stub().resolves([{ vector: [1, 0], chunk: "q" }]),
+        vectorStore: { search: sinon.stub().returns([]) },
+        webRetriever: sinon.stub().resolves({ query: "q", sources: [] }),
+        contextBuilder: sinon.stub().returns({ contextText: "some context", citations: [] }),
+        generator: sinon.stub().rejects(new Error("Claude unavailable")),
+      });
+
+      try {
+        await ragService.submitQuery({
+          userId: "u1",
+          question: "Can I extend my visa?",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err.code).to.equal("RAG_UPSTREAM_ERROR");
+        expect(err.retryable).to.equal(true);
+      }
     });
-    expect(result.queryId).to.be.a("string");
-    await clock.runAllAsync();
-    expect(emit.calledWith("query:error")).to.equal(true);
   });
 });
