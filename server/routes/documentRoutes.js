@@ -5,7 +5,9 @@ const { upload } = require("../middleware/upload");
 // Initialize router
 const router = express.Router();
 
+// Document routes
 router.get("/", documentController.listDocuments);
+router.get("/chat/:chatId", documentController.listDocumentsByChat);
 router.post("/upload", upload.single("document"), documentController.uploadDocument);
 router.delete("/:id", documentController.deleteDocument);
 

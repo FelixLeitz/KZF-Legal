@@ -5,13 +5,13 @@ const fs = require('fs');
 
 // Configuration
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_MIME_TYPES = [
+const ALLOWED_MIME_TYPES = new Set([
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'text/plain',
-];
-const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt'];
+]);
+const ALLOWED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.txt']);
 
 // Multer storage configuration
 const storage = multer.diskStorage({

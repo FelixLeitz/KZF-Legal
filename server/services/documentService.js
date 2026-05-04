@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const mongoose = require("mongoose");
 const Document = require("../models/Document");
-const { from_file } = require("file-type");
+const Chat = require("../models/Chat");
+const { fromFile } = require("file-type");
 const logger = require("../utils/logger");
 const { ALLOWED_MIME_TYPES } = require('../middleware/upload');
+// const ingestDocument = require("../../rag/index").ingestDocument;
 
 // Detect duplicate documents by computing a checksum of the file content
 const _computeChecksum = (filePath) =>
@@ -39,26 +42,56 @@ const _deleteFileFromDisk = async (relativeStorageUrl) => {
     }
 };
 
-const createDocument = async ({ file, userId }) => {
+const createDocument = async ({ file, userId, chatId }) => {
     const tmpPath = file.path;
-
     try {
+        let chat;
+        // Validate provided chat reference
+        if (chatId) {
+            // Validate ObjectId format before querying
+            if (!mongoose.Types.ObjectId.isValid(chatId)) {
+                const error = new Error("Invalid chatId format");
+                error.statusCode = 404;
+                error.code = "NOT_FOUND";
+                throw error;
+            }
+
+            // Attempt to find the chat in the database by ID
+            chat = await Chat.findById(chatId);
+
+            // chatId was provided but no matching chat exists
+            if (!chat) {
+                const error = new Error("Chat not found");
+                error.statusCode = 404;
+                error.code = "NOT_FOUND";
+                throw error;
+            }
+        } else {
+            // If no chatId is provided, create a new chat
+            chat = await Chat.create({
+                user: userId,
+                title: "New Chat",
+                lastMessageAt: Date.now()
+            });
+            chatId = chat._id;
+        }
+
         const detectedType = await fromFile(tmpPath);
         // Definitive file type check, the fileFilter in upload.js is a preliminary gate based on the client-reported Content-Type.
         if (!detectedType || !ALLOWED_MIME_TYPES.has(detectedType.mime)) {
             const error = new Error(`File content does not match an allowed type. Detected: ${detectedType?.mime ?? "unknown"}`);
-            error.status = 415;
+            error.statusCode = 415;
             error.code = "UNSUPPORTED_FILE_TYPE";
             throw error;
         }
 
-        // Duplicate detection using checksum
+        // Compute a hashed checksum of the file content
         const checksum = await _computeChecksum(tmpPath);
-
-        const duplicate = await Document.findOne({ user: userId, checksum });
+        // Duplicate detection using hashed checksum
+        const duplicate = await Document.findOne({ user: userId, chat: chatId, checksum });
         if (duplicate) {
             const error = new Error("Duplicate document detected");
-            error.status = 409;
+            error.statusCode = 409;
             error.code = "DOCUMENT_ALREADY_EXISTS";
             throw error;
         }
@@ -69,6 +102,7 @@ const createDocument = async ({ file, userId }) => {
         // Create document record in database
         const document = await Document.create({
             user: userId,
+            chat: chatId,
             filename: file.originalname,
             mimeType: detectedType.mime,
             size: file.size,
@@ -77,7 +111,9 @@ const createDocument = async ({ file, userId }) => {
             status: "pending",
         });
 
-        return document;
+        const documentId = document._id;
+
+        return { documentId, chatId };
     } catch (err) {
         // Clean up the temp file in case of any error to prevent orphaned files consuming disk space
         try {
@@ -92,15 +128,78 @@ const createDocument = async ({ file, userId }) => {
     }
 };
 
+const processDocument = async ({ documentId, userId, chatId, io }) => {
+    try {
+        // Mark as processing so the client can show an active progress state
+        await Document.findByIdAndUpdate(documentId, { status: "processing" });
+
+        io.to(`user:${userId}`).emit("document:processing", {
+            documentId,
+        });
+
+        // ----------------------------------------------------------------
+        // RAG ingestion — replace the dummy block below with your actual
+        // RAG service call, e.g.:
+        // const ragResult = await ragService.ingestDocument({ documentId, userId, chatId });
+        // ----------------------------------------------------------------
+        const ragResult = {
+            extractedSummary: "Dummy extracted summary for testing purposes.",
+        };
+
+        // Persist the extracted summary and mark as fully ingested
+        await Document.findByIdAndUpdate(documentId, {
+            extractedSummary: ragResult.extractedSummary,
+            status: "ingested",
+        });
+
+        // Notify the client that the document is ready to be used in queries
+        io.to(`user:${userId}`).emit("document:ingested", {
+            documentId,
+            status: "ingested",
+        });
+
+        logger.info(
+            { documentId, userId },
+            "Document processed and ingested successfully"
+        );
+    } catch (err) {
+        // Log the error with contextual information for easier debugging
+        logger.error(
+            { err, documentId, userId },
+            `processDocument error for documentId ${documentId}`
+        );
+
+        try {
+            // Update the document status to "failed" and store the error message for debugging purposes. 
+            await Document.findByIdAndUpdate(documentId, {
+                status: "failed",
+                errorMessage: err.message,
+            });
+        } catch (updateErr) {
+            // If updating the document status also fails, log that error as well.
+            logger.error(
+                { err: updateErr, documentId },
+                `Failed to update document status to failed for documentId ${documentId}`
+            );
+        }
+
+        // Emit the failure event to the client so they can inform the user and potentially allow them to retry or delete the document.
+        io.to(`user:${userId}`).emit("document:failed", {
+            documentId,
+            error: err.message,
+        });
+    }
+};
+
 // Remove a document, ensuring that only the owner can delete it and that the file is removed from disk
-const removeDocument = async ({ documentId, userId }) => {
+const removeDocument = async ({ documentId, userId, chatId }) => {
     // Verify that the document exists and belongs to the user before attempting deletion
     const document = await Document.findOne({ _id: documentId, user: userId });
 
     // If the document doesn't exist or doesn't belong to the user, return a 404 Not Found error to prevent unauthorized access
     if (!document) {
         const error = new Error("Document not found");
-        error.status = 404;
+        error.statusCode = 404;
         error.code = "NOT_FOUND";
         throw error;
     }
@@ -112,11 +211,18 @@ const removeDocument = async ({ documentId, userId }) => {
     await Document.deleteOne({ _id: documentId });
 };
 
-// Retrieve all documents for a user, excluding sensitive fields like storageUrl and extractedText to optimize response size and protect sensitive information. Documents are sorted by creation date in descending order for better UX in the UI.
+// Retrieve all documents for a user, excluding sensitive fields like storageUrl and extractedSummary 
 const getDocumentsByUser = async (userId) => {
     return Document.find({ user: userId })
-        .select("-storageUrl -extractedText -checksum")
+        .select("-storageUrl -extractedSummary -checksum")
         .sort({ createdAt: -1 });
 };
 
-module.exports = { createDocument, removeDocument, getDocumentsByUser };
+// Retrieve all documents for a specific chat, which can be used to show the documents
+const getDocumentsByChat = async (userId, chatId) => {
+    return Document.find({ chat: chatId, user: userId })
+        .select("-storageUrl -extractedSummary -checksum")
+        .sort({ createdAt: -1 });
+};
+
+module.exports = { createDocument, processDocument, removeDocument, getDocumentsByUser, getDocumentsByChat };
