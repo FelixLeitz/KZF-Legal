@@ -7,7 +7,7 @@ const Chat = require("../models/Chat");
 const { fromFile } = require("file-type");
 const logger = require("../utils/logger");
 const { ALLOWED_MIME_TYPES } = require('../middleware/upload');
-// const ingestDocument = require("../../rag/index").ingestDocument;
+// const ragService = require("./ragService");
 
 // Detect duplicate documents by computing a checksum of the file content
 const _computeChecksum = (filePath) =>
@@ -209,6 +209,9 @@ const removeDocument = async ({ documentId, userId, chatId }) => {
 
     // Remove the document record from the database
     await Document.deleteOne({ _id: documentId });
+
+    // Pass the documentId and ChatId to the RAG service to allow it to clean up any associated vector embeddings   
+    // await ragService.removeDocument({ documentId, chatId });
 };
 
 // Retrieve all documents for a user, excluding sensitive fields like storageUrl and extractedSummary 
