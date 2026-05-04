@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const documentSchema = new mongoose.Schema(
   {
+    // Each document belongs to a chat 
+    chat: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chat",
+      required: true,
+      index: true,
+    },
     // Each document is uploaded by a user, which can be used for access control and organization in the UI
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -16,11 +23,20 @@ const documentSchema = new mongoose.Schema(
     // Filesize in bytes, which can be displayed in the UI and used for validating upload limits
     size: { type: Number, required: true },
     // Path to the stored document
-    storageUrl: { type: String, required: true }, 
-    // Text extracted from document for RAG 
-    extractedText: { type: String }, 
+    storageUrl: { type: String, required: true },
+    // Summary extracted from document for RAG 
+    extractedSummary: { type: String },
     // Prevent duplicate uploads by storing a checksum of the file content
-    checksum: { type: String, index: true }, 
+    checksum: { type: String, index: true },
+    // Tracks the ingestion lifecycle of the document in the RAG pipeline
+    status: {
+      type: String,
+      enum: ["pending", "processing", "ingested", "failed"],
+      default: "pending",
+      index: true,
+    },
+    // Stores the reason for failure if ingestion fails
+    errorMessage: { type: String },
   },
   { timestamps: true },
 );
