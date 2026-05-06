@@ -29,7 +29,7 @@ async function embedBatch({ client, model, batch, retryCount }) {
 }
 
 function createEmbedder(options = {}) {
-  const client = options.client || new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  let client = options.client || null;
   const model = options.model || DEFAULT_EMBED_MODEL;
   const batchSize = options.batchSize || DEFAULT_BATCH_SIZE;
   const retryCount = options.retryCount ?? DEFAULT_RETRY_COUNT;
@@ -37,6 +37,10 @@ function createEmbedder(options = {}) {
   async function embedChunks(chunks = []) {
     if (!chunks.length) {
       return [];
+    }
+
+    if (!client) {
+      client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     }
 
     const vectors = [];

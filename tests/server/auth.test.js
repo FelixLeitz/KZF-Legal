@@ -18,7 +18,7 @@ describe('POST /api/auth/register', () => {
 
         expect(res.status).to.equal(201)
         expect(res.body.success).to.be.true
-        expect(res.body.data).to.have.property('userId')
+        expect(res.body.data).to.have.property('id')
         expect(res.body.data).to.have.property('email', validUser.email)
         expect(res.body.data).to.not.have.property('password')
     })

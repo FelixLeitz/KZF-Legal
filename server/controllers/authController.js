@@ -2,7 +2,7 @@ const passport = require("passport");
 const {
   registerUser,
   loginUser,
-  getUserByID,
+  getUserById,
 } = require("../services/authService");
 
 // Register a new user
@@ -69,7 +69,7 @@ const logout = (req, res) => {
 const getMe = async (req, res, next) => {
   try {
     // Retrieve user from database using ID from JWT payload (set by auth middleware)
-    const user = await getUserById(req.user.userId);
+    const user = await getUserById(req.user.id);
 
     // If user is found, return safe user object without password
     res.status(200).json({

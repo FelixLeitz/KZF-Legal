@@ -57,7 +57,7 @@ passport.use(
     async (jwtPayload, done) => {
       try {
         // Find user by ID from JWT payload
-        const user = await User.findById(jwtPayload.userId);
+        const user = await User.findById(jwtPayload.id);
 
         // If user not found, authentication fails
         if (!user) {

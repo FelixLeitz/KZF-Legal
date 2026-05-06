@@ -1,17 +1,12 @@
 const express = require("express");
+const chatController = require("../controllers/chatController");
+const validateRequest = require("../middleware/validateRequest");
+const chatQuerySchema = require("../validators/chatValidator");
 
 // Initialize router
 const router = express.Router();
 
-// Chat route (placeholder)
-router.post("/", (req, res) => {
-  res.status(501).json({
-    success: false,
-    error: {
-      message: "Not implemented",
-      code: "NOT_IMPLEMENTED",
-    },
-  });
-});
+// Chat routes
+router.post("/", validateRequest(chatQuerySchema), chatController.postChat);
 
 module.exports = router;

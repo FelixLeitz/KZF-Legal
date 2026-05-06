@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const helmet = require("helmet");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -39,6 +40,9 @@ if (config.NODE_ENV === 'development') {
 
 // Initialize Passport (without session as JWT is stateless)
 app.use(passport.initialize());
+
+// Serve Static Files on http://localhost:PORT/ (your public folder)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // API routes
 app.use("/api", routes);
