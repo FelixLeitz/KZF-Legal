@@ -64,7 +64,17 @@ const createDocument = async (file, userId, chatId) => {
             throw error;
         }
 
-        const detectedType = await fromFile(tmpPath);
+        // Perform server-side file type detection using the file-type library, which reads the file's magic numbers to determine its true type
+        let detectedType = await fromFile(tmpPath);
+
+        // Fallback for .txt files
+        if (!detectedType && path.extname(tmpPath).toLowerCase() === '.txt') {
+            detectedType = {
+                mime: 'text/plain',
+                ext: 'txt'
+            };
+        }
+
         // Definitive file type check, the fileFilter in upload.js is a preliminary gate based on the client-reported Content-Type.
         if (!detectedType || !ALLOWED_MIME_TYPES.has(detectedType.mime)) {
             const error = new Error(`File content does not match an allowed type. Detected: ${detectedType?.mime ?? "unknown"}`);
@@ -122,8 +132,8 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
         const result = {
             chunks: 42,
             extractedSummary: "This document outlines the requirements for engineering occupations on the MLTSSL,"
-            + " including the need for a positive skills assessment and accredited engineering degree programmes" 
-            + " among signatory countries.",
+                + " including the need for a positive skills assessment and accredited engineering degree programmes"
+                + " among signatory countries.",
             meta: {
                 ingestMs: 980
             }
@@ -141,11 +151,6 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
             extractedSummary: result.extractedSummary,
             status: "ingested",
         });
-
-        logger.info(
-            { documentId, userId },
-            "Document processed and ingested successfully"
-        );
     } catch (err) {
         // Log the error with contextual information for easier debugging
         logger.error(`processDocument error for documentId ${documentId}:`, err);

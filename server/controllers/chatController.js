@@ -4,7 +4,6 @@ const chatService = require("../services/chatService");
 const createChat = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        console.log("Creating chat for userId:", userId);
         const { title } = req.body ?? {};
 
         const chatId = await chatService.createChat(userId, title);
