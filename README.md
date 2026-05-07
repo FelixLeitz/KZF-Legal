@@ -19,16 +19,45 @@ public/
 server/
   app.js
   server.js
-  routes/
-    .gitkeep
-  models/
-    .gitkeep
-  controllers/
-    .gitkeep
   config/
-    .gitkeep
+    env.js
+    database.js
+    passport.js
+  models/
+    User.js
+    Chat.js
+    Message.js
+    Document.js
+  controllers/
+    authController.js
+    chatController.js
+    documentController.js
   services/
-    .gitkeep
+    authService.js
+    chatService.js
+    documentService.js
+  routes/
+    index.js
+    adminRoutes.js
+    authRoutes.js
+    chatRoutes.js
+    documentRoutes.js
+    healthRoutes.js
+  middleware/
+    authenticateSocket.js
+    validateRequest.js
+    errorHandler.js
+    notFound.js
+    requireAuth.js
+    requireAdmin.js
+    upload.js
+  validators/
+    authValidator.js
+    chatValidator.js
+    docValidator.js
+  utils/
+    logger.js
+    seed.js
 
 rag/
   chunker.js
@@ -42,13 +71,19 @@ tests/
   public/
   rag/
   server/
+    auth.test.js
+    health.test.js
+    middleware.test.js
+    notFound.test.js
+    helpers/
+      mockAuth.js
 ```
 
 ## Tech Stack
 
 - **Runtime:** Node.js
 - **Framework:** Express.js
-- **Authentication:** Clerk
+- **Authentication:** Passport
 - **Database:** MongoDB (Mongoose)
 
 ## Getting Started
@@ -57,15 +92,14 @@ tests/
 
 - Node.js v20 or higher
 - npm v10 or higher
-- MongoDB instance (local or Atlas)
-- Clerk account (for auth keys)
+- MongoDB instance
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd kzf-legal-api
+   git clone https://github.com/kryscodeless/KZF-Legal.git
+   cd KFZ-Legal
    ```
 
 2. Install dependencies:
@@ -73,12 +107,14 @@ tests/
    npm install
    ```
 
-3. Start the development server:
+3. Copy the .env.example to .env
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
 
-4. Verify the server is running:
+5. Verify the server is running:
    ```bash
    curl http://localhost:3000/api/health
    ```
