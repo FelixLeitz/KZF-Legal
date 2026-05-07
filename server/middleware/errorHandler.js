@@ -4,8 +4,8 @@ const errorHandler = (err, req, res, next) => {
     // Log the full error internally
     // logger.error({ err }, err.message)
 
-    // Default to 500 Internal Server Error if statusCode is not set
-    const statusCode = err.statusCode || 500
+    // Default to 500 Internal Server Error if status is not set
+    const status = err.status || 500
     const code = err.code || 'INTERNAL_SERVER_ERROR'
 
     // In development return the actual error message and stack
@@ -16,7 +16,7 @@ const errorHandler = (err, req, res, next) => {
             : 'An unexpected error occurred. Please try again later.'
 
     // Only include the stack trace in development for debugging purposes
-    res.status(statusCode).json({
+    res.status(status).json({
         success: false,
         error: {
             message,

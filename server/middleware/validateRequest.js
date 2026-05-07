@@ -11,7 +11,7 @@ const validateRequest = (schema) => (req, res, next) => {
     }));
 
     const error = new Error(errors[0].message);
-    error.statusCode = 400;
+    error.status = 400;
     error.code = "VALIDATION_ERROR";
     return next(error);
   }

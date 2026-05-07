@@ -7,7 +7,7 @@ const authenticateSocket = (socket, next) => {
     // If no token is provided, reject the connection with an authentication error
     if (!token) {
         const error = new Error("Authentication error: No token provided");
-        error.statusCode = 401;
+        error.status = 401;
         error.code = "NO_TOKEN";
         return next(error);
     }
@@ -20,7 +20,7 @@ const authenticateSocket = (socket, next) => {
     } catch (err) {
         // If token verification fails, reject the connection with an authentication error
         const error = new Error("Authentication error: Invalid or expired token");
-        error.statusCode = 401;
+        error.status = 401;
         error.code = "INVALID_TOKEN";
         return next(error);
     }

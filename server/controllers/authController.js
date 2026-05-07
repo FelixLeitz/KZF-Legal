@@ -33,7 +33,7 @@ const login = (req, res, next) => {
       // If credentials are invalid, return a 401 error with message and code from the local strategy
       if (!user) {
         const error = new Error("Invalid email or password");
-        error.statusCode = 401;
+        error.status = 401;
         error.code = "AUTH_INVALID_CREDENTIALS";
         return next(error);
       }

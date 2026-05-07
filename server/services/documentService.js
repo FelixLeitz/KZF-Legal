@@ -48,7 +48,7 @@ const createDocument = async (file, userId, chatId) => {
         // Validate ObjectId format before querying
         if (!mongoose.Types.ObjectId.isValid(chatId)) {
             const error = new Error("Invalid chatId format");
-            error.statusCode = 404;
+            error.status = 404;
             error.code = "NOT_FOUND";
             throw error;
         }
@@ -59,7 +59,7 @@ const createDocument = async (file, userId, chatId) => {
         // chatId was provided but no matching chat exists
         if (!chat) {
             const error = new Error("Chat not found");
-            error.statusCode = 404;
+            error.status = 404;
             error.code = "NOT_FOUND";
             throw error;
         }
@@ -68,7 +68,7 @@ const createDocument = async (file, userId, chatId) => {
         // Definitive file type check, the fileFilter in upload.js is a preliminary gate based on the client-reported Content-Type.
         if (!detectedType || !ALLOWED_MIME_TYPES.has(detectedType.mime)) {
             const error = new Error(`File content does not match an allowed type. Detected: ${detectedType?.mime ?? "unknown"}`);
-            error.statusCode = 415;
+            error.status = 415;
             error.code = "UNSUPPORTED_FILE_TYPE";
             throw error;
         }
@@ -79,7 +79,7 @@ const createDocument = async (file, userId, chatId) => {
         const duplicate = await Document.findOne({ user: userId, chat: chatId, checksum });
         if (duplicate) {
             const error = new Error("Duplicate document detected");
-            error.statusCode = 409;
+            error.status = 409;
             error.code = "DOCUMENT_ALREADY_EXISTS";
             throw error;
         }
@@ -187,7 +187,7 @@ const removeDocument = async (documentId, userId, chatId) => {
     // If the document doesn't exist or doesn't belong to the user, return a 404 Not Found error to prevent unauthorized access
     if (!document) {
         const error = new Error("Document not found");
-        error.statusCode = 404;
+        error.status = 404;
         error.code = "NOT_FOUND";
         throw error;
     }

@@ -11,15 +11,15 @@ const {
 // Authentication middleware tests - covers requireAuth for various token scenarios
 describe('requireAuth middleware', () => {
 
-    // Standard successful authentication test - should allow access with a valid JWT and return 501 from the dummy route
-    it('should pass through and return 501 with a valid JWT', async () => {
+    // Standard successful authentication test - should allow access with a valid JWT and return 201 created 
+    it('should pass through and return 201 with a valid JWT', async () => {
         const { token } = await createUserAndToken()
 
         const res = await request(app)
-            .post('/api/chat')
+            .post('/api/chat/create')
             .set('Authorization', `Bearer ${token}`)
 
-        expect(res.status).to.equal(501)
+        expect(res.status).to.equal(201)
     })
 
     // Invalid token scenarios - should return 401 with AUTH_INVALID_TOKEN code for missing, malformed, invalid signature, and expired tokens

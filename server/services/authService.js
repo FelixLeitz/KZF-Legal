@@ -9,7 +9,7 @@ const registerUser = async ({ email, password }) => {
   // If user already exists, return a 409 error with message and code
   if (existingUser) {
     const error = new Error("A user with this email already exists");
-    error.statusCode = 409;
+    error.status = 409;
     error.code = "USER_ALREADY_EXISTS";
     throw error;
   }
@@ -51,7 +51,7 @@ const getUserById = async (userId) => {
   // If user not found, throw a 404 error with message and code
   if (!user) {
     const error = new Error("User not found");
-    error.statusCode = 404;
+    error.status = 404;
     error.code = "NOT_FOUND";
     throw error;
   }

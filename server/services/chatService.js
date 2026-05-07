@@ -35,7 +35,7 @@ const createPendingMessage = async (userId, query, chatId) => {
     // chatId was provided but no matching chat exists
     if (!chat) {
         const error = new Error("Chat not found");
-        error.statusCode = 404;
+        error.status = 404;
         error.code = "NOT_FOUND";
         throw error;
     }
