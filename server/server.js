@@ -30,16 +30,19 @@ io.on("connection", (socket) => {
 
   // Join a room specific to the user for targeted message delivery
   socket.join(`user:${userId}`);
-  logger.info({ userId, socketId: socket.id }, "Authenticated user joined room");
+  logger.info(
+    { userId, socketId: socket.id },
+    "Authenticated user joined room",
+  );
 
   // Handle socket disconnection
   socket.on("disconnect", () => {
     logger.info({ socketId: socket.id }, "Socket disconnected");
   });
-})
+});
 
 // Make io accessible in controllers via app
-app.set("io", io)
+app.set("io", io);
 
 const startServer = async () => {
   // Connect to the database before starting the server

@@ -24,14 +24,10 @@ const envSchema = z.object({
     .string()
     .min(32, "JWT_SECRET must be at least 32 characters long"),
 
-  JWT_EXPIRES_IN: z
-    .string()
-    .default("7d"),
+  JWT_EXPIRES_IN: z.string().default("7d"),
 
   // CORS configuration
-  ALLOWED_ORIGINS: z
-    .string()
-    .min(1, "ALLOWED_ORIGINS is required")
+  ALLOWED_ORIGINS: z.string().min(1, "ALLOWED_ORIGINS is required"),
 });
 
 // Parse and validate process.env against the schema
