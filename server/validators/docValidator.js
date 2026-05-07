@@ -8,6 +8,8 @@ const objectIdSchema = z
     });
 
 const listDocumentsSchema = z.object({
+    body: z.object({}).optional(),
+    params: z.object({}).optional(),
     query: z.object({
         page: z
             .string()
@@ -28,9 +30,11 @@ const listDocumentsSchema = z.object({
 
 const makeIdParamSchema = (paramName) =>
     z.object({
+        body: z.object({}).optional(),
         params: z.object({
             [paramName]: objectIdSchema,
         }),
+        query: z.object({}).optional(),
     });
 
 const chatIdParamSchema     = makeIdParamSchema("chatId");

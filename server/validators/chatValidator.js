@@ -16,6 +16,8 @@ const createChatSchema = z.object({
             .trim()
             .optional(),
     }),
+    params: z.object({}).optional(),
+    query: z.object({}).optional(),
 });
 
 const submitQuerySchema = z.object({
@@ -34,9 +36,12 @@ const submitQuerySchema = z.object({
     params: z.object({
         chatId: objectIdSchema,
     }),
+    query: z.object({}).optional(),
 });
 
 const listChatsSchema = z.object({
+    body: z.object({}).optional(),
+    params: z.object({}).optional(),
     query: z.object({
         page: z
             .string()
@@ -56,9 +61,11 @@ const listChatsSchema = z.object({
 });
 
 const chatIdParamSchema = z.object({
+    body: z.object({}).optional(),
     params: z.object({
         chatId: objectIdSchema,
     }),
+    query: z.object({}).optional(),
 });
 
 module.exports = {
