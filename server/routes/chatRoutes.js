@@ -7,6 +7,7 @@ const chatQuerySchema = require("../validators/chatValidator");
 const router = express.Router();
 
 // Chat routes
-router.post("/", validateRequest(chatQuerySchema), chatController.postChat);
+router.post("/create", chatController.createChat);
+router.post("/:chatId", validateRequest(chatQuerySchema), chatController.postChat);
 
 module.exports = router;

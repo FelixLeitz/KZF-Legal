@@ -4,40 +4,40 @@ const Message = require("../models/Message");
 const logger = require("../utils/logger");
 // const submitQuery = require("../../rag/index").submitQuery;
 
+const createChat = async (userId, title) => {
+    const chat = await Chat.create({
+        user: userId,
+        title: title ?? "New Chat",
+        lastMessageAt: Date.now(),
+    });
+
+    const chatId = chat._id;
+
+    return chatId;
+};
+
 const createPendingMessage = async (userId, query, chatId) => {
-    let chat;
-
-    if (chatId) {
-        // Validate ObjectId format before querying
-        if (!mongoose.Types.ObjectId.isValid(chatId)) {
-            const error = new Error("Invalid chatId format");
-            error.statusCode = 404;
-            error.code = "NOT_FOUND";
-            throw error;
-        }
-
-        // Attempt to find the chat in the database by ID
-        chat = await Chat.findById(chatId);
-
-        // chatId was provided but no matching chat exists
-        if (!chat) {
-            const error = new Error("Chat not found");
-            error.statusCode = 404;
-            error.code = "NOT_FOUND";
-            throw error;
-        }
-
-        // Chat exists — update lastMessageAt
-        await Chat.findByIdAndUpdate(chatId, { lastMessageAt: Date.now() });
-    } else {
-        // If no chatId is provided, create a new chat
-        chat = await Chat.create({
-            user: userId,
-            title: "New Chat",
-            lastMessageAt: Date.now()
-        });
-        chatId = chat._id;
+    // Validate ObjectId format before querying
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        const error = new Error("Invalid chatId format");
+        error.status = 404;
+        error.code = "NOT_FOUND";
+        throw error;
     }
+
+    // Attempt to find the chat in the database by ID
+    const chat = await Chat.findById(chatId);
+
+    // chatId was provided but no matching chat exists
+    if (!chat) {
+        const error = new Error("Chat not found");
+        error.statusCode = 404;
+        error.code = "NOT_FOUND";
+        throw error;
+    }
+
+    // Chat exists — update lastMessageAt
+    await Chat.findByIdAndUpdate(chatId, { lastMessageAt: Date.now() });
 
     // Create message shell with status "pending". This allows the UI to show a loading state while the query is being processed.
     const message = await Message.create({
@@ -50,7 +50,7 @@ const createPendingMessage = async (userId, query, chatId) => {
 
     const messageId = message._id;
 
-    return { chatId, messageId };
+    return messageId;
 }
 
 const processQuery = async ({ query, messageId, userId, documentIds, io }) => {
@@ -91,4 +91,4 @@ const processQuery = async ({ query, messageId, userId, documentIds, io }) => {
     }
 };
 
-module.exports = { createPendingMessage, processQuery };
+module.exports = { createChat, createPendingMessage, processQuery };
