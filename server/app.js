@@ -14,35 +14,37 @@ const notFound = require("./middleware/notFound");
 const app = express();
 
 // Set secure HTTP headers that protect against common vulnerabilities
-app.use(helmet())
+app.use(helmet());
 
 // Allow cross-origin requests from the frontend
-app.use(cors({
-    origin: config.ALLOWED_ORIGINS.split(','),
-    credentials: true
-}))
+app.use(
+  cors({
+    origin: config.ALLOWED_ORIGINS.split(","),
+    credentials: true,
+  }),
+);
 
 // Global middleware
 // Parse JSON bodies with a size limit;
-app.use(express.json({ limit: '100kb' }))
-// Parse URL-encoded bodies 
+app.use(express.json({ limit: "100kb" }));
+// Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
 // Create a stream object with a 'write' function that Morgan can call
 const stream = {
-    write: (message) => logger.info(message.trim()),
+  write: (message) => logger.info(message.trim()),
 };
 
 // Log HTTP requests in development mode
-if (config.NODE_ENV === 'development') {
-    app.use(morgan('dev', { stream }))
+if (config.NODE_ENV === "development") {
+  app.use(morgan("dev", { stream }));
 }
 
 // Initialize Passport (without session as JWT is stateless)
 app.use(passport.initialize());
 
 // Serve Static Files on http://localhost:PORT/ (your public folder)
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, "../public")));
 
 // API routes
 app.use("/api", routes);

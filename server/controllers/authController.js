@@ -8,6 +8,7 @@ const {
 // Register a new user
 const register = async (req, res, next) => {
   try {
+    // Create new user in database with validated request body data
     const user = await registerUser(req.body);
 
     // If successfully registered, return 201 with safe user object

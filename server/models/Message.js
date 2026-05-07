@@ -1,27 +1,30 @@
 const mongoose = require("mongoose");
 
-const citationSchema = new mongoose.Schema({
-  // A unique identifier for the citation, which can be used to reference it in the UI or for linking to documents
-  id: { type: Number, required: true }, 
-  // A human-readable title for the source, which can be displayed in the UI      
-  title: { type: String, required: true },
-  // Source type indicates where the information came from, which can help in rendering the citation in the UI
-  source: {
-    type: String,
-    enum: ['vector', 'web'],                   
-    required: true,
+const citationSchema = new mongoose.Schema(
+  {
+    // A unique identifier for the citation, which can be used to reference it in the UI or for linking to documents
+    id: { type: Number, required: true },
+    // A human-readable title for the source, which can be displayed in the UI
+    title: { type: String, required: true },
+    // Source type indicates where the information came from, which can help in rendering the citation in the UI
+    source: {
+      type: String,
+      enum: ["vector", "web"],
+      required: true,
+    },
+    // For web sources, the URL of the page where the information was retrieved
+    url: { type: String },
+    // Retrieved text snippet from the source, useful for showing context in the UI
+    snippet: { type: String },
+    // Optional: link back to your own Document collection when source === 'vector'
+    documentRef: { type: mongoose.Schema.Types.ObjectId, ref: "Document" },
   },
-  // For web sources, the URL of the page where the information was retrieved
-  url: { type: String },
-  // Retrieved text snippet from the source, useful for showing context in the UI
-  snippet: { type: String },
-  // Optional: link back to your own Document collection when source === 'vector'
-  documentRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-}, { _id: false }); // No need for ObjectIds for citation
+  { _id: false },
+); // No need for ObjectIds for citation
 
 const messageSchema = new mongoose.Schema(
   {
-    // Each message belongs to a chat and a user 
+    // Each message belongs to a chat and a user
     chat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",
@@ -30,11 +33,11 @@ const messageSchema = new mongoose.Schema(
     },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    // User submitted query 
+    // User submitted query
     query: { type: String, required: true },
     // Structured response by the system, including the answer and its citations
     response: {
-      answer:    { type: String, default: "" },  
+      answer: { type: String, default: "" },
       citations: { type: [citationSchema], default: [] },
     },
 

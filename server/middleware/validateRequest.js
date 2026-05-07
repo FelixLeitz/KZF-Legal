@@ -1,10 +1,10 @@
 const validateRequest = (schema) => (req, res, next) => {
   // Validate the request against the provided Zod schema
   const result = schema.safeParse({
-        body: req.body,
-        params: req.params,
-        query: req.query,
-    });
+    body: req.body,
+    params: req.params,
+    query: req.query,
+  });
 
   // If validation fails, return a 400 Bad Request with detailed error information
   if (!result.success) {

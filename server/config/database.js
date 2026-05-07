@@ -11,14 +11,14 @@ const connectDB = async () => {
     // Connect to MongoDB using Mongoose
     await mongoose.connect(config.MONGODB_URI);
     logger.info(`MongoDB connected under URI: ${config.MONGODB_URI}`);
-    
+
     // Log the number of documents in each collection for debugging
     const userCount = await User.countDocuments();
     const documentCount = await Document.countDocuments();
     const chatCount = await Chat.countDocuments();
     const messageCount = await Message.countDocuments();
     logger.info(
-      `Database stats - Users: ${userCount}, Documents: ${documentCount}, Chats: ${chatCount}, Messages: ${messageCount}`
+      `Database stats - Users: ${userCount}, Documents: ${documentCount}, Chats: ${chatCount}, Messages: ${messageCount}`,
     );
   } catch (error) {
     logger.error(`MongoDB connection error: ${error.message}`);

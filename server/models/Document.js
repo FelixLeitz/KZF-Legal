@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const documentSchema = new mongoose.Schema(
   {
-    // Each document belongs to a chat 
+    // Each document belongs to a chat
     chat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",
@@ -24,7 +24,7 @@ const documentSchema = new mongoose.Schema(
     size: { type: Number, required: true },
     // Path to the stored document
     storageUrl: { type: String, required: true },
-    // Summary extracted from document for RAG 
+    // Summary extracted from document for RAG
     extractedSummary: { type: String },
     // Prevent duplicate uploads by storing a checksum of the file content
     checksum: { type: String, index: true },
