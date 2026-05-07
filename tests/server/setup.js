@@ -14,8 +14,8 @@ before(async () => {
 // Clear the database after each test to ensure test isolation
 afterEach(async () => {
     const collections = await mongoose.connection.db.collections();
-    for (const key in collections) {
-        await collections[key].deleteMany({});
+    for (const collection of collections) {
+        await collection.deleteMany({});
     }
 })
 
