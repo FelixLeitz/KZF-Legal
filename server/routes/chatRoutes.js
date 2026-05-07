@@ -1,16 +1,20 @@
 const express = require("express");
 const chatController = require("../controllers/chatController");
 const validateRequest = require("../middleware/validateRequest");
-const chatQuerySchema = require("../validators/chatValidator");
+const { createChatSchema,
+    submitQuerySchema,
+    listChatsSchema,
+    chatIdParamSchema
+} = require("../validators/chatValidator");
 
 // Initialize router
 const router = express.Router();
 
 // Chat routes
-router.get("/", chatController.listChats);
-router.get("/:chatId", chatController.getChat);
-router.delete('/:chatId', chatController.deleteChat);
-router.post("/create", chatController.createChat);
-router.post("/:chatId", validateRequest(chatQuerySchema), chatController.postChat);
+router.get("/", validateRequest(listChatsSchema), chatController.listChats);
+router.get("/:chatId", validateRequest(chatIdParamSchema), chatController.getChat);
+router.delete('/:chatId', validateRequest(chatIdParamSchema), chatController.deleteChat);
+router.post("/create", validateRequest(createChatSchema), chatController.createChat);
+router.post("/:chatId", validateRequest(submitQuerySchema), chatController.postChat);
 
 module.exports = router;

@@ -13,7 +13,7 @@ const notFound = require("./middleware/notFound");
 // Initialize Express app
 const app = express();
 
-// Set secure HTTP headers with on responses
+// Set secure HTTP headers that protect against common vulnerabilities
 app.use(helmet())
 
 // Allow cross-origin requests from the frontend

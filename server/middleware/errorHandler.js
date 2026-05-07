@@ -2,7 +2,7 @@ const logger = require("../utils/logger");
 
 const errorHandler = (err, req, res, next) => {
     // Log the full error internally
-    // logger.error({ err }, err.message)
+    logger.error({ err }, err.message)
 
     // Default to 500 Internal Server Error if status is not set
     const status = err.status || 500

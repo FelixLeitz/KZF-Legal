@@ -41,6 +41,9 @@ const documentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Create a compound index for fast retrieval
+documentSchema.index({ chat: 1, user: 1, createdAt: -1 });
+
 Document = mongoose.model("Document", documentSchema);
 
 module.exports = Document;
