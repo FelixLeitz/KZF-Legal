@@ -1,6 +1,7 @@
 const express = require("express");
 const documentController = require("../controllers/documentController");
 const { upload } = require("../middleware/upload");
+const validateRequest = require("../middleware/validateRequest");
 const {listDocumentsSchema,
     chatIdParamSchema,
     documentIdParamSchema} = require("../validators/docValidator");

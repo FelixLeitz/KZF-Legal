@@ -12,9 +12,9 @@ const createChatSchema = z.object({
     body: z.object({
         title: z
             .string()
-            .optional()
             .max(100, "Title must not exceed 100 characters")
-            .trim(),
+            .trim()
+            .optional(),
     }),
 });
 
