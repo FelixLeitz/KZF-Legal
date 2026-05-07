@@ -99,9 +99,7 @@ const createDocument = async (file, userId, chatId) => {
             status: "pending",
         });
 
-        const documentId = document._id;
-
-        return documentId;
+        return document;
     } catch (err) {
         // Clean up the temp file in case of any error to prevent orphaned files consuming disk space
         try {
@@ -116,33 +114,31 @@ const createDocument = async (file, userId, chatId) => {
     }
 };
 
-const processDocument = async (documentId, userId, chatId, io) => {
+const processDocument = async (documentId, userId, file_path, mimeType, io) => {
     try {
-        // Mark as processing so the client can show an active progress state
-        await Document.findByIdAndUpdate(documentId, { status: "processing" });
+        // Ingest the document into the RAG pipeline to extract text, generate embeddings, and make it available for querying.
+        // const result = await ragService.ingestDocument({ userId, documentId, file_path, mimeType });
 
-        io.to(`user:${userId}`).emit("document:processing", {
-            documentId,
-        });
-
-        // ----------------------------------------------------------------
-        // RAG ingestion — replace the dummy block below with your actual
-        // RAG service call, e.g.:
-        // const ragResult = await ragService.ingestDocument({ documentId, userId, chatId });
-        // ----------------------------------------------------------------
-        const ragResult = {
-            extractedSummary: "Dummy extracted summary for testing purposes.",
-        };
+        const result = {
+            chunks: 42,
+            extractedSummary: "This document outlines the requirements for engineering occupations on the MLTSSL,"
+            + " including the need for a positive skills assessment and accredited engineering degree programmes" 
+            + " among signatory countries.",
+            meta: {
+                ingestMs: 980
+            }
+        }
 
         // Persist the extracted summary and mark as fully ingested
         await Document.findByIdAndUpdate(documentId, {
-            extractedSummary: ragResult.extractedSummary,
+            extractedSummary: result.extractedSummary,
             status: "ingested",
         });
 
         // Notify the client that the document is ready to be used in queries
-        io.to(`user:${userId}`).emit("document:ingested", {
-            documentId,
+        io.to(`user:${userId}`).emit("document:update", {
+            documentId: documentId,
+            extractedSummary: result.extractedSummary,
             status: "ingested",
         });
 
@@ -152,10 +148,7 @@ const processDocument = async (documentId, userId, chatId, io) => {
         );
     } catch (err) {
         // Log the error with contextual information for easier debugging
-        logger.error(
-            { err, documentId, userId },
-            `processDocument error for documentId ${documentId}`
-        );
+        logger.error(`processDocument error for documentId ${documentId}:`, err);
 
         try {
             // Update the document status to "failed" and store the error message for debugging purposes. 
@@ -165,16 +158,14 @@ const processDocument = async (documentId, userId, chatId, io) => {
             });
         } catch (updateErr) {
             // If updating the document status also fails, log that error as well.
-            logger.error(
-                { err: updateErr, documentId },
-                `Failed to update document status to failed for documentId ${documentId}`
-            );
+            logger.error(`Failed to update document status to failed for documentId ${documentId}:`, updateErr);
         }
 
         // Emit the failure event to the client so they can inform the user and potentially allow them to retry or delete the document.
-        io.to(`user:${userId}`).emit("document:failed", {
-            documentId,
-            error: err.message,
+        io.to(`user:${userId}`).emit("document:update", {
+            documentId: documentId,
+            status: "failed",
+            error: "An error occurred while processing the document. Please try again later.",
         });
     }
 };

@@ -20,7 +20,7 @@ const createChat = async (userId, title) => {
     return chatId;
 };
 
-const createPendingMessage = async (userId, query, chatId) => {
+const createPendingMessage = async (userId, query, chatId, documentIds) => {
     // Validate ObjectId format before querying
     if (!mongoose.Types.ObjectId.isValid(chatId)) {
         const error = new Error("Invalid chatId format");
@@ -49,6 +49,7 @@ const createPendingMessage = async (userId, query, chatId) => {
         user: userId,
         query: query,
         response: { answer: "", citations: [] },
+        documents: documentIds || [],
         status: "pending"
     });
 
@@ -57,46 +58,91 @@ const createPendingMessage = async (userId, query, chatId) => {
     return messageId;
 }
 
-const processQuery = async ({ query, messageId, userId, documentIds, io }) => {
+const processQuery = async (query, messageId, userId, documentIds, io) => {
     try {
         // Call the RAG service to process the query and retrieve an answer along with any relevant citations.
-        // const ragResponse = await ragService.submitQuery(query, userId, documentIds);
+        // const response = await ragService.submitQuery({userId, question: query, documentIds});
 
         // DUMMY RESPONSE FOR TESTING - DELETE WHEN ACTUAL RAG SERVICE CALL IS IMPLEMENTED
-        let ragResponse = {
-            answer: "This is a dummy answer generated for testing purposes.",
-            citations: []
+        const ragResult = {
+            answer:
+                "Yes. For most engineering occupations on the Medium and Long-term " +
+                "Strategic Skills List (MLTSSL), a positive skills assessment from " +
+                "Engineers Australia (EA) is a mandatory requirement before you can " +
+                "lodge an Expression of Interest through SkillSelect [[1]]. " +
+                "For a Civil Engineer (ANZSCO 233211), EA assesses your qualifications " +
+                "and work experience against Australian standards. A UK accredited " +
+                "degree from a Washington Accord signatory institution is generally " +
+                "recognised, which may simplify your assessment [[2]].",
+            citations: [
+                {
+                    id: 1,
+                    title: "Skills assessment for migration — Engineers Australia",
+                    source: "web",
+                    url: "https://www.engineersaustralia.org.au/skills-assessment",
+                    snippet:
+                        "A skills assessment from Engineers Australia is required for " +
+                        "engineers seeking to migrate to Australia through the General " +
+                        "Skilled Migration program.",
+                },
+                {
+                    id: 2,
+                    title: "Washington Accord — International Engineering Alliance",
+                    source: "web",
+                    url: "https://www.ieagreements.org/accords/washington/",
+                    snippet:
+                        "The Washington Accord recognises the substantial equivalence of " +
+                        "accredited engineering degree programmes among signatory countries.",
+                },
+            ],
+            meta: {
+                latencyMs: 1234,
+                model: "claude-3-5-haiku-latest",
+                retrieval: {
+                    vectorHits: 4,
+                    webHits: 2
+                }
+            }
         };
 
         // Update the message in DB
         await Message.findByIdAndUpdate(messageId, {
-            answer: ragResponse.answer,
-            citations: ragResponse.citations,
-            status: "complete",
-        });
+            response: {
+                answer: ragResult.answer,
+                citations: ragResult.citations,
+            },
+            status: "completed",
+        }, { runValidators: true });
 
         // Emit to the user's socket room
-        io.to(`user:${userId}`).emit("chat:response", {
+        io.to(`user:${userId}`).emit("chat:update", {
             messageId: messageId,
-            answer: ragResponse.answer,
-            citations: ragResponse.citations,
+            response: {
+                answer: ragResult.answer,
+                citations: ragResult.citations,
+            },
+            status: "completed"
         });
     } catch (err) {
-        // If there's an error during processing, update the message status to "error" and emit an error event to the client.
+        // If there's an error during processing, update the message status to "failed" and emit a failed event to the client.
         logger.error(`processQuery error for messageId ${messageId}:`, err);
         try {
-            await Message.findByIdAndUpdate(messageId, { status: "error" });
+            await Message.findByIdAndUpdate(messageId, { status: "failed" }, { runValidators: true });
         }
         catch (updateErr) {
-            logger.error(`Failed to update message status to error for messageId ${messageId}:`, updateErr);
+            logger.error(`Failed to update message status to failed for messageId ${messageId}:`, updateErr);
         }
 
-        io.to(`user:${userId}`).emit("chat:error", { messageId: messageId });
+        io.to(`user:${userId}`).emit("chat:update", {
+            messageId: messageId,
+            status: "failed",
+            error: "An error occurred while processing your query. Please try again later."
+        });
     }
 };
 
 // List all chat chats for a user, paginated and sorted by recent activity.
-const listAllChats = async (userId, {page = DEFAULT_PAGE, limit = DEFAULT_LIMIT}) => {
+const listAllChats = async (userId, page = DEFAULT_PAGE, limit = DEFAULT_LIMIT) => {
     // Sanitize and validate pagination parameters to prevent abuse and ensure reasonable defaults.
     const safePage = Math.max(parseInt(page, 10) || DEFAULT_PAGE, 1);
     const safeLimit = Math.min(Math.max(parseInt(limit, 10) || DEFAULT_LIMIT, 1), MAX_LIMIT);

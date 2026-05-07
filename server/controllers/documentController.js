@@ -5,24 +5,26 @@ const uploadDocument = async (req, res, next) => {
         // Retrieve the authenticated user's ID, the chat ID and the uploaded file from the request object
         const userId = req.user.id;
         const file = req.file;
-        const { chatId } = req.params; 
+        const { chatId } = req.params;
 
         // Delegate the document creation logic to the service layer
-        const documentId = await documentService.createDocument( file, userId, chatId );
-        
+        const document = await documentService.createDocument(file, userId, chatId);
+
         // Respond with a 202 Accepted status to indicate that the document has been received and is being processed asynchronously.
         res.status(202).json({
             success: true,
-            data: { documentId },
+            data: {
+                documentId: document._id,
+                status: "pending"
+            },
         });
 
+        const file_path = document.storageUrl;
+        const mimeType = document.mimeType;
+        const documentId = document._id;
+
         // Trigger asynchronous processing of the document (e.g., text extraction, indexing) 
-        documentService.processDocument({
-            documentId: documentId,
-            userId,
-            chatId,
-            io: req.app.get("io"),
-        });
+        documentService.processDocument(documentId, userId, file_path, mimeType, req.app.get("io"));
     } catch (err) {
         next(err);
     }
@@ -31,14 +33,14 @@ const uploadDocument = async (req, res, next) => {
 const deleteDocument = async (req, res, next) => {
     try {
         // Retrieve the authenticated user's ID, the document ID, and the chat ID from the request object
-        const userId = req.user.id; 
+        const userId = req.user.id;
         const { documentId } = req.params;
 
         // Delegate the document deletion logic to the service layer, which will handle authorization checks and file cleanup
-        await documentService.removeDocument( documentId, userId);
+        await documentService.removeDocument(documentId, userId);
 
-        // Respond with a 202 Accepted status to indicate that the document has been successfully deleted. 
-        res.status(202).json({
+        // Respond with a 200 OK status to indicate that the document has been successfully deleted. 
+        res.status(200).json({
             success: true,
             message: "Document deleted successfully",
         });
@@ -58,11 +60,11 @@ const listDocuments = async (req, res, next) => {
         // Respond with a 200 OK status and the list of documents in the response body. 
         res.status(200).json({
             success: true,
-            data: documents,
+            data: { documents },
         });
     } catch (err) {
         next(err);
-    }    
+    }
 };
 
 const listDocumentsByChat = async (req, res, next) => {
@@ -77,11 +79,11 @@ const listDocumentsByChat = async (req, res, next) => {
         // Respond with a 200 OK status and the list of documents in the response body. 
         res.status(200).json({
             success: true,
-            data: documents,
+            data: { documents },
         });
     } catch (err) {
         next(err);
-    }    
+    }
 };
 
 module.exports = { uploadDocument, deleteDocument, listDocuments, listDocumentsByChat };

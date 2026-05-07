@@ -31,7 +31,7 @@ const documentSchema = new mongoose.Schema(
     // Tracks the ingestion lifecycle of the document in the RAG pipeline
     status: {
       type: String,
-      enum: ["pending", "processing", "ingested", "failed"],
+      enum: ["pending", "ingested", "failed"],
       default: "pending",
       index: true,
     },
