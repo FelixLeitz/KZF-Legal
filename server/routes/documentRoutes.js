@@ -8,7 +8,7 @@ const router = express.Router();
 // Document routes
 router.get("/", documentController.listDocuments);
 router.get("/chat/:chatId", documentController.listDocumentsByChat);
-router.post("/upload", upload.single("document"), documentController.uploadDocument);
-router.delete("/:id", documentController.deleteDocument);
+router.post("/upload/:chatId", upload.single("document"), documentController.uploadDocument);
+router.delete("/:documentId", documentController.deleteDocument);
 
 module.exports = router;

@@ -42,38 +42,26 @@ const _deleteFileFromDisk = async (relativeStorageUrl) => {
     }
 };
 
-const createDocument = async ({ file, userId, chatId }) => {
+const createDocument = async (file, userId, chatId) => {
     const tmpPath = file.path;
     try {
-        let chat;
-        // Validate provided chat reference
-        if (chatId) {
-            // Validate ObjectId format before querying
-            if (!mongoose.Types.ObjectId.isValid(chatId)) {
-                const error = new Error("Invalid chatId format");
-                error.statusCode = 404;
-                error.code = "NOT_FOUND";
-                throw error;
-            }
+        // Validate ObjectId format before querying
+        if (!mongoose.Types.ObjectId.isValid(chatId)) {
+            const error = new Error("Invalid chatId format");
+            error.statusCode = 404;
+            error.code = "NOT_FOUND";
+            throw error;
+        }
 
-            // Attempt to find the chat in the database by ID
-            chat = await Chat.findById(chatId);
+        // Attempt to find the chat in the database by ID
+        const chat = await Chat.findById(chatId);
 
-            // chatId was provided but no matching chat exists
-            if (!chat) {
-                const error = new Error("Chat not found");
-                error.statusCode = 404;
-                error.code = "NOT_FOUND";
-                throw error;
-            }
-        } else {
-            // If no chatId is provided, create a new chat
-            chat = await Chat.create({
-                user: userId,
-                title: "New Chat",
-                lastMessageAt: Date.now()
-            });
-            chatId = chat._id;
+        // chatId was provided but no matching chat exists
+        if (!chat) {
+            const error = new Error("Chat not found");
+            error.statusCode = 404;
+            error.code = "NOT_FOUND";
+            throw error;
         }
 
         const detectedType = await fromFile(tmpPath);
@@ -113,7 +101,7 @@ const createDocument = async ({ file, userId, chatId }) => {
 
         const documentId = document._id;
 
-        return { documentId, chatId };
+        return documentId;
     } catch (err) {
         // Clean up the temp file in case of any error to prevent orphaned files consuming disk space
         try {
@@ -128,7 +116,7 @@ const createDocument = async ({ file, userId, chatId }) => {
     }
 };
 
-const processDocument = async ({ documentId, userId, chatId, io }) => {
+const processDocument = async (documentId, userId, chatId, io) => {
     try {
         // Mark as processing so the client can show an active progress state
         await Document.findByIdAndUpdate(documentId, { status: "processing" });
@@ -192,7 +180,7 @@ const processDocument = async ({ documentId, userId, chatId, io }) => {
 };
 
 // Remove a document, ensuring that only the owner can delete it and that the file is removed from disk
-const removeDocument = async ({ documentId, userId, chatId }) => {
+const removeDocument = async (documentId, userId, chatId) => {
     // Verify that the document exists and belongs to the user before attempting deletion
     const document = await Document.findOne({ _id: documentId, user: userId });
 
