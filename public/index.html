@@ -11,7 +11,7 @@
   </head>
 
   <body>
-    <!-- login page (shown by default when the user is not authenticated.) -->
+    <!-- login page -->
     <div id="page-login" class="auth-screen">
       <div class="auth-card">
 
@@ -54,7 +54,7 @@
       </div>
     </div>
 
-    <!-- register page (allows users to create an account.) -->
+    <!-- register page -->
     <div id="page-register" class="auth-screen hidden">
       <div class="auth-card">
 
@@ -70,15 +70,13 @@
         <!-- error message: hidden by default, shown on failed registration -->
         <div id="register-error" class="form-error hidden">Something went wrong. Please try again.</div>
 
-        <!-- name, email, password inputs -->
-        <div class="form-group">
-          <label class="form-label" for="reg-name">Full name</label>
-          <input class="form-input" type="text" id="reg-name" placeholder="Your name" autocomplete="name" />
-        </div>
+        <!-- email input -->
         <div class="form-group">
           <label class="form-label" for="reg-email">Email</label>
           <input class="form-input" type="email" id="reg-email" placeholder="you@email.com" autocomplete="email" />
         </div>
+        
+        <!-- password input -->
         <div class="form-group">
           <label class="form-label" for="reg-password">Password</label>
           <input class="form-input" type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" />
@@ -95,10 +93,11 @@
       </div>
     </div>
 
-    <!-- main app shell -->
+
+    <!-- main app shell-->
     <div id="app-shell" class="app-shell hidden">
 
-      <!-- sidebar: left navigation -->
+      <!-- SIDEBAR: persistent left navigation -->
       <nav class="sidebar" id="sidebar">
 
         <!-- app branding (logo + name) -->
@@ -111,7 +110,7 @@
           <span class="sb-wordmark">KZF</span>
         </div>
 
-        <!-- navigation buttons + data-page tells JS which page to show -->
+        <!-- navigation buttons — data-page tells JS which page to show -->
         <div class="sb-nav">
 
           <!-- home -->
@@ -169,16 +168,17 @@
 
       </nav>
 
-      <!-- page area: the right side. only one inner-page visible at a time -->
+      <!-- PAGE AREA: the right side — only one inner-page visible at a time -->
       <main class="page-area" id="page-area">
 
-        <!-- home page (page after login screen.) -->
+
+        <!-- home page -->
         <section id="page-home" class="inner-page">
 
-          <!-- greeting heading + name is injected by JS after login -->
+          <!-- greeting heading — email prefix injected by JS after login -->
           <div class="page-header">
             <div>
-              <h1 class="page-title" id="home-greeting">Hello, User</h1>
+              <h1 class="page-title" id="home-greeting">Hello</h1>
               <p class="page-subtitle">How can we help you today?</p>
             </div>
           </div>
@@ -230,13 +230,12 @@
 
           <!-- legal disclaimer required by SRS -->
           <p class="disclaimer">AI responses are not formal legal advice. Always consult a registered legal practitioner for official guidance.</p>
-
         </section>
 
         <!-- chat page -->
         <section id="page-chat" class="inner-page hidden chat-layout">
 
-          <!-- chat header, session title + new chat button -->
+          <!-- chat header: session title + new chat button -->
           <div class="chat-header">
             <div class="chat-title-row">
               <!-- title updates to the first message the user sends -->
@@ -249,7 +248,7 @@
             </button>
           </div>
 
-          <!-- messages container + chat.js appends bubbles here dynamically -->
+          <!-- messages container — chat.js appends bubbles here dynamically -->
           <div class="chat-messages" id="chat-messages">
 
             <!-- empty state: shown before the user sends any message -->
@@ -358,7 +357,7 @@
               <input type="text" id="history-search" placeholder="Search conversations…" />
             </div>
 
-            <!-- filter chips: all / this week / this month -->
+            <!-- filter chips: All / This week / This month -->
             <div class="filter-chips" id="filter-chips">
               <button class="filter-chip active" data-filter="all">All</button>
               <button class="filter-chip" data-filter="week">This week</button>
@@ -380,396 +379,11 @@
     <!-- toast notification: pops up at the bottom for success/error messages -->
     <div id="toast" class="toast hidden"></div>
 
-
-    <!-- javascript file: socket.js, upload.js, chat.js and script for app routing and state -->
+    <!-- javascript files -->
     <script src="./js/socket.js"></script>
     <script src="./js/upload.js"></script>
     <script src="./js/chat.js"></script>
-
-    <script>
-    // app state
-    const state = {
-      currentUser:     null,   // the logged-in user object { name, email }
-      currentPage:     'login', // which page is currently visible
-      currentSessionId: null,  // the active chat session ID (backend)
-      token:           null,   // session token returned by login (used by socket + fetch)
-    };
-
-    // test history data (will be removed in final demo)
-    // used to populate the home and history pages while the backend is being built.
-    const MOCK_HISTORY = [
-      { id: 's1', title: 'Work rights as a student in Australia', date: '2026-05-06', preview: 'Can I work full-time on a student visa?' },
-      { id: 's2', title: 'Visa Questions',                        date: '2026-05-05', preview: 'What is the processing time for a 485 visa?' },
-      { id: 's3', title: 'Partner Visa Requirements',             date: '2026-05-03', preview: 'What documents are needed for a partner visa?' },
-    ];
-
-    // page navigation 
-    function navigateTo(page) {
-      // hide every inner page
-      document.querySelectorAll('.inner-page').forEach(p => p.classList.add('hidden'));
-
-      // remove active highlight from all sidebar buttons
-      document.querySelectorAll('.sb-item[data-page]').forEach(b => b.classList.remove('active'));
-
-      // show the target page
-      const target = document.getElementById('page-' + page);
-      if (target) target.classList.remove('hidden');
-
-      // highlight the matching sidebar button
-      const sbBtn = document.querySelector('.sb-item[data-page="' + page + '"]');
-      if (sbBtn) sbBtn.classList.add('active');
-
-      state.currentPage = page;
-
-      // run page-specific setup when navigating to these pages
-      if (page === 'home')    renderHomeRecent();
-      if (page === 'history') renderHistory(MOCK_HISTORY);
-    }
-
-    // authentication flow 
-
-    // showAuthPage: switches between login and register screens.
-    // hides the main app shell so only the auth card is visible.
-    function showAuthPage(which) {
-      document.getElementById('page-login').classList.toggle('hidden', which !== 'login');
-      document.getElementById('page-register').classList.toggle('hidden', which !== 'register');
-      document.getElementById('app-shell').classList.add('hidden');
-    }
-
-    // enterApp: called after a successful login or registration.
-    // receives the user object and session token from the API response.
-    // hides auth screens, shows the app shell, connects the socket, and navigates to the home page.
-    function enterApp(user, token) {
-      state.currentUser = user;
-      state.token = token;
-
-      // hide both auth screens
-      document.getElementById('page-login').classList.add('hidden');
-      document.getElementById('page-register').classList.add('hidden');
-
-      // show the main app
-      document.getElementById('app-shell').classList.remove('hidden');
-
-      // update the greeting and avatar initial with the user's name
-      document.getElementById('home-greeting').textContent = 'Hello, ' + (user.name || 'User') + ' 👋';
-      document.getElementById('sb-avatar-initials').textContent = (user.name || 'U').charAt(0).toUpperCase();
-
-      // connect socket using the session token so the backend can authenticate
-      // real-time messages. null is passed during mock/dev mode.
-      ChatSocket.connect(token);
-
-      // go to the home page
-      navigateTo('home');
-    }
-
-
-    // toast notifications 
-    // shows a small pop-up message at the bottom of the screen.
-    // type is 'success' (green) or 'error' (red), and automatically hides after 3 seconds.
-    function showToast(msg, type = 'success') {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'toast ' + type;
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3000);
-    }
-
-    // login page handlers
-    // sign in button click
-    document.getElementById('btn-login').addEventListener('click', async () => {
-      const email    = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      const errEl    = document.getElementById('login-error');
-      errEl.classList.add('hidden');
-
-      // basic client-side validation before hitting the API
-      if (!email || !password) {
-        errEl.textContent = 'Please enter your email and password.';
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      // show loading state on the button while the request is in flight
-      const btn = document.getElementById('btn-login');
-      btn.textContent = 'Signing in…';
-      btn.disabled = true;
-
-      try {
-        await new Promise(r => setTimeout(r, 800));
-        enterApp({ name: email.split('@')[0], email }, null);
-
-      } catch (err) {
-        // show the error returned by the server (or a fallback message)
-        errEl.textContent = err.message || 'Login failed. Please try again.';
-        errEl.classList.remove('hidden');
-      } finally {
-        // always restore the button regardless of success or failure
-        btn.textContent = 'Sign in';
-        btn.disabled = false;
-      }
-    });
-
-    // also allow pressing Enter in the password field to trigger login
-    document.getElementById('login-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('btn-login').click();
-    });
-
-    // switch to register page
-    document.getElementById('link-to-register').addEventListener('click', e => {
-      e.preventDefault();
-      showAuthPage('register');
-    });
-
-    // register page handlers 
-    // create account button click
-    document.getElementById('btn-register').addEventListener('click', async () => {
-      const name     = document.getElementById('reg-name').value.trim();
-      const email    = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value;
-      const errEl    = document.getElementById('register-error');
-      errEl.classList.add('hidden');
-
-      // validate all fields are filled and password is long enough
-      if (!name || !email || !password) {
-        errEl.textContent = 'Please fill in all fields.';
-        errEl.classList.remove('hidden');
-        return;
-      }
-      if (password.length < 8) {
-        errEl.textContent = 'Password must be at least 8 characters.';
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      // show loading state
-      const btn = document.getElementById('btn-register');
-      btn.textContent = 'Creating account…';
-      btn.disabled = true;
-
-      try {
-        await new Promise(r => setTimeout(r, 800));
-        enterApp({ name, email }, null);
-
-      } catch (err) {
-        errEl.textContent = err.message || 'Registration failed. Please try again.';
-        errEl.classList.remove('hidden');
-      } finally {
-        btn.textContent = 'Create account';
-        btn.disabled = false;
-      }
-    });
-
-    // switch back to login page
-    document.getElementById('link-to-login').addEventListener('click', e => {
-      e.preventDefault();
-      showAuthPage('login');
-    });
-
-
-    // sidebar navigation
-    // attach click handlers to all sidebar buttons that have a data-page attribute
-    document.querySelectorAll('.sb-item[data-page]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const page = btn.getAttribute('data-page');
-        // 'chat' always starts a fresh session rather than resuming
-        if (page === 'chat') {
-          startNewChat();
-        } else {
-          navigateTo(page);
-        }
-      });
-    });
-
-    // quick action cards on the home page (History and Upload shortcuts)
-    document.querySelectorAll('.qa-card[data-page]').forEach(btn => {
-      btn.addEventListener('click', () => navigateTo(btn.getAttribute('data-page')));
-    });
-
-    // attach button (in chat footer) navigates to the upload page
-    document.getElementById('btn-attach').addEventListener('click', () => navigateTo('upload'));
-
-    // sign out: disconnect socket, clear state, return to login screen
-    document.getElementById('btn-logout').addEventListener('click', () => {
-      ChatSocket.disconnect();        // close the socket connection cleanly
-      state.currentUser     = null;
-      state.currentSessionId = null;
-      state.token           = null;
-      showAuthPage('login');
-      showToast('Signed out successfully');
-    });
-
-
-    // home page
-    // renderHomeRecent: builds the recent conversations list on the home page.
-    // takes the last 3 items from MOCK_HISTORY (replace with real API data later).
-    function renderHomeRecent() {
-      const list   = document.getElementById('home-recent-list');
-      const recent = MOCK_HISTORY.slice(0, 3);
-
-      list.innerHTML = recent.map(item => `
-        <div class="recent-item" data-id="${item.id}">
-          <div class="recent-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-          </div>
-          <div class="recent-item-body">
-            <p class="recent-title">${item.title}</p>
-            <p class="recent-preview">${item.preview}</p>
-          </div>
-          <span class="recent-date">${formatDate(item.date)}</span>
-        </div>
-      `).join('');
-
-      // clicking a recent item resumes that conversation
-      list.querySelectorAll('.recent-item').forEach(el => {
-        el.addEventListener('click', () => resumeSession(el.dataset.id));
-      });
-    }
-
-    // start new chat from the home page button
-    document.getElementById('home-new-chat').addEventListener('click', startNewChat);
-
-    // "View all" link goes to the full history page
-    document.getElementById('home-view-all').addEventListener('click', e => {
-      e.preventDefault();
-      navigateTo('history');
-    });
-
-    // quick ask box: typing a question and pressing send goes straight to chat
-    document.getElementById('home-ask-send').addEventListener('click', () => {
-      const q = document.getElementById('home-ask-input').value.trim();
-      if (q) startNewChat(q);
-    });
-    document.getElementById('home-ask-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('home-ask-send').click();
-    });
-
-
-    // history page
-    // renderHistory: builds the conversation list on the history page.
-    // sessions is an array of { id, title, date, preview } objects.
-    function renderHistory(sessions) {
-      const list = document.getElementById('history-list');
-
-      // show empty state message if there are no sessions
-      if (!sessions.length) {
-        list.innerHTML = '<p class="empty-state">No conversations yet. Start a new chat to begin.</p>';
-        return;
-      }
-
-      list.innerHTML = sessions.map(item => `
-        <div class="history-item" data-id="${item.id}">
-          <div class="history-item-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-          </div>
-          <div class="history-item-body">
-            <p class="history-conv">${item.title}</p>
-            <p class="history-preview">${item.preview}</p>
-          </div>
-          <span class="history-date">${formatDate(item.date)}</span>
-          <div class="history-actions">
-            <button class="btn-sm btn-resume" data-id="${item.id}">Resume</button>
-            <button class="btn-sm btn-delete" data-id="${item.id}">Delete</button>
-          </div>
-        </div>
-      `).join('');
-
-      // resume button: opens the chat page with that session loaded
-      list.querySelectorAll('.btn-resume').forEach(btn => {
-        btn.addEventListener('click', e => { e.stopPropagation(); resumeSession(btn.dataset.id); });
-      });
-
-      // delete button: removes the session from the list
-      list.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', e => { e.stopPropagation(); deleteSession(btn.dataset.id); });
-      });
-    }
-
-    // search input: filters the list in real time as the user types
-    document.getElementById('history-search').addEventListener('input', e => {
-      const q        = e.target.value.toLowerCase();
-      const filtered = MOCK_HISTORY.filter(s =>
-        s.title.toLowerCase().includes(q) || s.preview.toLowerCase().includes(q)
-      );
-      renderHistory(filtered);
-    });
-
-    // filter chips: All / This week / This month
-    document.getElementById('filter-chips').addEventListener('click', e => {
-      const chip = e.target.closest('.filter-chip');
-      if (!chip) return;
-
-      // update active chip highlight
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-
-      const now = new Date();
-      let filtered = MOCK_HISTORY;
-
-      if (chip.dataset.filter === 'week') {
-        // keep only sessions from the last 7 days
-        filtered = MOCK_HISTORY.filter(s => (now - new Date(s.date)) < 7 * 86400000);
-      } else if (chip.dataset.filter === 'month') {
-        // keep only sessions from the last 30 days
-        filtered = MOCK_HISTORY.filter(s => (now - new Date(s.date)) < 30 * 86400000);
-      }
-
-      renderHistory(filtered);
-    });
-
-
-    // helpers 
-    // startNewChat: resets the chat page to a blank state and navigates to it.
-    // optionally accepts an initialMessage string (from the home ask box)
-    // which gets pre-filled and auto-sent.
-    function startNewChat(initialMessage = null) {
-      state.currentSessionId = null;
-      navigateTo('chat');
-      document.getElementById('chat-session-title').textContent = 'New conversation';
-
-      // clear previous messages and restore the empty state prompt
-      const messages = document.getElementById('chat-messages');
-      messages.innerHTML = '';
-      const emptyState = document.getElementById('chat-empty-state');
-      if (emptyState) messages.appendChild(emptyState);
-
-      // if a question was passed in, pre-fill the input and auto-send
-      if (initialMessage) {
-        const input = document.getElementById('chat-input');
-        input.value = initialMessage;
-        input.dispatchEvent(new Event('input')); // trigger the enable-send-button logic
-        setTimeout(() => document.getElementById('chat-send-btn').click(), 100);
-      }
-    }
-
-    // resumeSession — opens a past conversation in the chat page.
-    function resumeSession(id) {
-      const session = MOCK_HISTORY.find(s => s.id === id);
-      if (!session) return;
-      state.currentSessionId = id;
-      navigateTo('chat');
-      document.getElementById('chat-session-title').textContent = session.title;
-    }
-
-    // deleteSession — removes a session from the history list.
-    function deleteSession(id) {
-      const idx = MOCK_HISTORY.findIndex(s => s.id === id);
-      if (idx > -1) MOCK_HISTORY.splice(idx, 1);
-      renderHistory(MOCK_HISTORY);
-      showToast('Conversation deleted');
-    }
-
-    // formatDate — converts an ISO date string into a readable AU format.
-    function formatDate(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    showAuthPage('login');
-    </script>
+    <script src="./js/app.js"></script>
 
   </body>
 </html>

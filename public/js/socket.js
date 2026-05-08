@@ -2,7 +2,6 @@
 
   let socket = null;
 
-  // connect using token from login response 
   function connect(token) {
     if (socket) return;
 
@@ -12,7 +11,6 @@
       }
     });
 
-    // called once the user logs in successfully
     socket.on('connect', () => {
       console.log('[socket.js] Connected:', socket.id);
     });
@@ -32,7 +30,6 @@
     });
   }
 
-  // called when the user signs out
   function disconnect() {
     if (socket) {
       socket.disconnect();
@@ -40,15 +37,23 @@
     }
   }
 
-  // called by chat.js whenever the user submits a question.
   function sendMessage(query, sessionId) {
+
     if (!socket) {
-      console.error('[socket.js] Socket not connected');
+      console.error('[socket.js] Cannot send — socket not connected. Was connect() called after login?');
       return;
     }
-    socket.emit('chat:send', { query, sessionId: sessionId || null });
+
+    socket.emit('chat:send', {
+      query:     query,
+      sessionId: sessionId || null,
+    });
   }
 
-  window.ChatSocket = { connect, disconnect, sendMessage };
+  window.ChatSocket = {
+    connect,
+    disconnect,
+    sendMessage,
+  };
 
 })();
