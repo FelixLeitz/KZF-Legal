@@ -29,7 +29,20 @@
 
 | Status | Body |
 |---|---|
-| `200 OK` | `{"success": true, "data": {"id": "string", "email": "user@example.com"}}` |
+| `200 OK` | `{"success": true, "data": {"id": "string", "email": "string", "role": "user", "createdAt": "string", "updatedAt": "string"}}` |
+
+```json
+{
+    "success": true,
+    "data": {
+        "id": "69fd40c5b62530ecf1f3608b",
+        "email": "user@example.com",
+        "role": "user",
+        "createdAt": "2026-05-08T01:47:49.450Z",
+        "updatedAt": "2026-05-08T01:47:49.450Z"
+    }
+}
+```
 
 #### Error Responses
 
@@ -70,7 +83,24 @@
 
 | Status | Body |
 |---|---|
-| `200 OK` | `{"success": true, "data": {"token": "jwt_token", "expiresIn": "string", "user": {"id": "string", "email": "user@example.com"}}}` |
+| `200 OK` | `{"success": true, "data": {"token": "jwt_token", "expiresIn": "string", "user": ...}}` |
+
+```json
+{
+    "success": true,
+    "data": {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZmQyOGQ2ZjEwMWE1OWM3OWU0OGQ4NyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MjA0NzU5LCJleHAiOjE3Nzg4MDk1NTl9.4LzNp_7F8p5S2Y71sQeVllcxT7k-pns-GYe1TVpJqeA",
+        "expiresIn": "7d",
+        "user": {
+            "id": "69fd28d6f101a59c79e48d87",
+            "email": "user@example.com",
+            "role": "user",
+            "createdAt": "2026-05-08T00:05:42.244Z",
+            "updatedAt": "2026-05-08T00:05:42.244Z"
+        }
+    }
+}
+```
 
 #### Error Responses
 
