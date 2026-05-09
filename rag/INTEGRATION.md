@@ -26,8 +26,6 @@ This contract defines how Backend (BE), Frontend (FE), and RAG communicate.
 
 Listen to BE socket events
 
-
-
 ---
 
 ## 2) Query Flow (Chat)
@@ -74,7 +72,7 @@ RAG -> BE return shape
   ],
   "meta": {
     "latencyMs": 1234,
-    "model": "claude-3-5-haiku-latest",
+    "model": "claude-4-5-sonnet",
     "retrieval": {
       "vectorHits": 4,
       "webHits": 2
@@ -195,4 +193,3 @@ RAG unit contract tests (submitQuery, ingestDocument return shapes)
 BE integration tests (DB update + socket emit on success/failure)
 E2E async chat test (POST /api/chat -> socket chat:updated)
 ```
-

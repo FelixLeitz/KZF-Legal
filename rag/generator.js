@@ -1,6 +1,6 @@
 const Anthropic = require("@anthropic-ai/sdk");
 
-const MODEL = process.env.LLM_MODEL || "claude-haiku-4.5";
+const MODEL = process.env.LLM_MODEL || "claude-sonnet-4-6";
 
 let client = null;
 

@@ -104,7 +104,8 @@ async function submitQuery({ userId, question, documentIds }) {
   try {
     answer = await state.generator({ question: input.question, contextText });
   } catch (err) {
-    throw makeRagError("RAG_UPSTREAM_ERROR", "LLM service unavailable", true);
+    const detail = err?.message ? `: ${err.message}` : "";
+    throw makeRagError("RAG_UPSTREAM_ERROR", `LLM service unavailable${detail}`, true);
   }
 
   return SubmitQueryResponseSchema.parse({

@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 const path = require("path");
+const dotenv = require("dotenv");
 const { createVectorStore } = require("../vectorStore");
 const { ingestCorpusDirectory } = require("../pipeline");
+
+dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
 
 async function run() {
   const vectorStore = createVectorStore({
