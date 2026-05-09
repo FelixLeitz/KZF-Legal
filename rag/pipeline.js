@@ -1,22 +1,40 @@
 const fs = require("fs");
 const path = require("path");
+const { PDFParse } = require("pdf-parse");
 const { chunkText } = require("./chunker");
 const { embedChunks } = require("./embedder");
 
-function readCorpusFiles(corpusDir) {
+async function extractPdfText(fullPath) {
+  const buffer = fs.readFileSync(fullPath);
+  const parser = new PDFParse({ data: buffer });
+  try {
+    const parsed = await parser.getText();
+    return parsed.text || "";
+  } finally {
+    await parser.destroy();
+  }
+}
+
+async function readCorpusFiles(corpusDir) {
   if (!fs.existsSync(corpusDir)) {
     return [];
   }
 
-  return fs.readdirSync(corpusDir)
-    .filter((file) => [".txt", ".md"].includes(path.extname(file).toLowerCase()))
-    .map((file) => {
-      const fullPath = path.join(corpusDir, file);
-      return {
-        sourceId: file,
-        text: fs.readFileSync(fullPath, "utf8"),
-      };
-    });
+  const files = fs.readdirSync(corpusDir)
+    .filter((file) => [".txt", ".md", ".pdf"].includes(path.extname(file).toLowerCase()));
+
+  return Promise.all(files.map(async (file) => {
+    const fullPath = path.join(corpusDir, file);
+    const ext = path.extname(file).toLowerCase();
+    const text = ext === ".pdf"
+      ? await extractPdfText(fullPath)
+      : fs.readFileSync(fullPath, "utf8");
+
+    return {
+      sourceId: file,
+      text,
+    };
+  }));
 }
 
 async function ingestText({
@@ -48,7 +66,7 @@ async function ingestCorpusDirectory({
   chunker = chunkText,
   embedder = embedChunks,
 }) {
-  const files = readCorpusFiles(corpusDir);
+  const files = await readCorpusFiles(corpusDir);
   let total = 0;
 
   for (const file of files) {
