@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const documentSchema = new mongoose.Schema(
   {
-    // Each document belongs to a chat 
+    // Each document belongs to a chat
     chat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",
@@ -24,14 +24,14 @@ const documentSchema = new mongoose.Schema(
     size: { type: Number, required: true },
     // Path to the stored document
     storageUrl: { type: String, required: true },
-    // Summary extracted from document for RAG 
+    // Summary extracted from document for RAG
     extractedSummary: { type: String },
     // Prevent duplicate uploads by storing a checksum of the file content
     checksum: { type: String, index: true },
     // Tracks the ingestion lifecycle of the document in the RAG pipeline
     status: {
       type: String,
-      enum: ["pending", "processing", "ingested", "failed"],
+      enum: ["pending", "ingested", "failed"],
       default: "pending",
       index: true,
     },
@@ -40,6 +40,9 @@ const documentSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Create a compound index for fast retrieval
+documentSchema.index({ chat: 1, user: 1, createdAt: -1 });
 
 Document = mongoose.model("Document", documentSchema);
 

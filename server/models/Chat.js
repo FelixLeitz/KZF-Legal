@@ -5,7 +5,7 @@ const chatSchema = new mongoose.Schema(
   {
     // Each chat belongs to a user
     user: {
-      type: mongoose.Schema.Types.ObjectId, 
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
       index: true,
@@ -14,7 +14,7 @@ const chatSchema = new mongoose.Schema(
     title: {
       type: String,
       default: "New Chat",
-    }, 
+    },
     // Track the time of the last message for sorting chats by recent activity
     lastMessageAt: {
       type: Date,

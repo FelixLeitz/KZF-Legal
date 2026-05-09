@@ -12,12 +12,14 @@ const connectDB = async () => {
     await mongoose.connect(config.MONGODB_URI);
     logger.info(`MongoDB connected under URI: ${config.MONGODB_URI}`);
 
-    // Clear existing data from collections for a clean slate (DELETE FOR PRODUCTION)
-    await User.deleteMany({});
-    await Document.deleteMany({});
-    await Chat.deleteMany({});
-    await Message.deleteMany({});
-    logger.info("Database cleared of existing data");
+    // Log the number of documents in each collection for debugging
+    const userCount = await User.countDocuments();
+    const documentCount = await Document.countDocuments();
+    const chatCount = await Chat.countDocuments();
+    const messageCount = await Message.countDocuments();
+    logger.info(
+      `Database stats - Users: ${userCount}, Documents: ${documentCount}, Chats: ${chatCount}, Messages: ${messageCount}`,
+    );
   } catch (error) {
     logger.error(`MongoDB connection error: ${error.message}`);
     process.exit(1); // Exit process with failure
