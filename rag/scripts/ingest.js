@@ -1,23 +1,23 @@
 /* eslint-disable no-console */
 const path = require("path");
 const dotenv = require("dotenv");
-const { createVectorStore } = require("../vectorStore");
+const { createDefaultVectorStore } = require("../vectorStoreFactory");
 const { ingestCorpusDirectory } = require("../pipeline");
 
 dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
 
 async function run() {
-  const vectorStore = createVectorStore({
+  const vectorStore = createDefaultVectorStore({
     persistPath: path.join(__dirname, "..", "data", "vectors.json"),
   });
-  vectorStore.load();
+  await Promise.resolve(vectorStore.load());
 
   const result = await ingestCorpusDirectory({
     corpusDir: path.join(__dirname, "..", "corpus"),
     vectorStore,
   });
 
-  vectorStore.save();
+  await Promise.resolve(vectorStore.save());
   console.log(`Ingested ${result.files} files and ${result.chunks} chunks.`);
 }
 

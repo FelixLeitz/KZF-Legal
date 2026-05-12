@@ -4,7 +4,7 @@ const { embedChunks } = require("./embedder");
 const { retrieveWebContext } = require("./webRetriever");
 const { buildContext } = require("./contextBuilder");
 const { generateAnswer, MODEL } = require("./generator");
-const { createVectorStore } = require("./vectorStore");
+const { createDefaultVectorStore } = require("./vectorStoreFactory");
 const { ingestText } = require("./pipeline");
 const { extractDocumentText } = require("./documentExtractor");
 const {
@@ -27,7 +27,7 @@ const _defaultFns = {
 
 const state = {
   ..._defaultFns,
-  vectorStore: createVectorStore({
+  vectorStore: createDefaultVectorStore({
     persistPath: path.join(__dirname, "data", "vectors.json"),
   }),
 };
@@ -73,7 +73,7 @@ async function ingestDocument({ userId, documentId, filePath, mimeType }) {
     embedder: state.embedder,
     metadata: { userId: input.userId, documentId: input.documentId },
   });
-  state.vectorStore.save();
+  await Promise.resolve(state.vectorStore.save());
 
   return IngestDocumentResponseSchema.parse({
     chunks,
@@ -95,14 +95,14 @@ async function submitQuery({ userId, question, documentIds }) {
 
   const queryVector = embeddedQuestion[0]?.vector || [];
   const scopedDocumentIds = input.documentIds?.length ? input.documentIds : null;
-  const vectorHits = state.vectorStore.search({
+  const vectorHits = await Promise.resolve(state.vectorStore.search({
     queryVector,
     limit: 4,
     namespaces: scopedDocumentIds
       ? [`user:${input.userId}`]
       : ["global", `user:${input.userId}`],
     documentIds: scopedDocumentIds,
-  });
+  }));
 
   let webResponse;
   try {
@@ -138,13 +138,13 @@ async function submitQuery({ userId, question, documentIds }) {
 
 async function removeDocument({ userId, documentId }) {
   const input = RemoveDocumentInputSchema.parse({ userId, documentId });
-  const removed = state.vectorStore.removeByDocument({
+  const removed = await Promise.resolve(state.vectorStore.removeByDocument({
     namespace: `user:${input.userId}`,
     documentId: input.documentId,
-  });
+  }));
 
   if (removed > 0) {
-    state.vectorStore.save();
+    await Promise.resolve(state.vectorStore.save());
   }
 
   return RemoveDocumentResponseSchema.parse({ removed });
