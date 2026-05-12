@@ -43,10 +43,21 @@ const IngestDocumentResponseSchema = z.object({
   }),
 });
 
+const RemoveDocumentInputSchema = z.object({
+  userId: z.string().min(1),
+  documentId: z.string().min(1),
+});
+
+const RemoveDocumentResponseSchema = z.object({
+  removed: z.number().int().nonnegative(),
+});
+
 module.exports = {
   CitationSchema,
   SubmitQueryInputSchema,
   SubmitQueryResponseSchema,
   IngestDocumentInputSchema,
   IngestDocumentResponseSchema,
+  RemoveDocumentInputSchema,
+  RemoveDocumentResponseSchema,
 };

@@ -12,6 +12,8 @@ const {
   SubmitQueryResponseSchema,
   IngestDocumentInputSchema,
   IngestDocumentResponseSchema,
+  RemoveDocumentInputSchema,
+  RemoveDocumentResponseSchema,
 } = require("./schemas/api");
 
 const _defaultFns = {
@@ -126,6 +128,20 @@ async function submitQuery({ userId, question, documentIds }) {
   });
 }
 
+async function removeDocument({ userId, documentId }) {
+  const input = RemoveDocumentInputSchema.parse({ userId, documentId });
+  const removed = state.vectorStore.removeByDocument({
+    namespace: `user:${input.userId}`,
+    documentId: input.documentId,
+  });
+
+  if (removed > 0) {
+    state.vectorStore.save();
+  }
+
+  return RemoveDocumentResponseSchema.parse({ removed });
+}
+
 function __setState(nextState = {}) {
   const keys = ["vectorStore", "chunker", "embedder", "webRetriever", "contextBuilder", "generator"];
   for (const key of keys) {
@@ -139,4 +155,4 @@ function __resetState() {
   Object.assign(state, _defaultFns);
 }
 
-module.exports = { init, ingestDocument, submitQuery, __setState, __resetState };
+module.exports = { init, ingestDocument, submitQuery, removeDocument, __setState, __resetState };
