@@ -1,5 +1,5 @@
 async function retrieveWebContext(query) {
-  // Web retrieval integration point.
+  // Tavily (or equivalent) web search was deferred for this iteration (time-limited scope).
   return { query, sources: [] };
 }
 
