@@ -140,5 +140,30 @@ describe("ragService (v2)", () => {
         expect(err.retryable).to.equal(true);
       }
     });
+
+    it("scopes vector search to provided documentIds", async () => {
+      const search = sinon.stub().returns([]);
+      ragService.__setState({
+        embedder: sinon.stub().resolves([{ vector: [1, 0], chunk: "question" }]),
+        vectorStore: { search },
+        webRetriever: sinon.stub().resolves({ query: "q", sources: [] }),
+        contextBuilder: sinon.stub().returns({ contextText: "", citations: [] }),
+        generator: sinon.stub().resolves("Scoped answer"),
+      });
+
+      await ragService.submitQuery({
+        userId: "u1",
+        question: "What are subclass 500 requirements?",
+        documentIds: ["doc-a", "doc-b"],
+      });
+
+      expect(search.calledOnce).to.equal(true);
+      expect(search.firstCall.args[0]).to.deep.equal({
+        queryVector: [1, 0],
+        limit: 4,
+        namespaces: ["user:u1"],
+        documentIds: ["doc-a", "doc-b"],
+      });
+    });
   });
 });

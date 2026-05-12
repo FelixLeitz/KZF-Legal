@@ -84,10 +84,14 @@ async function submitQuery({ userId, question, documentIds }) {
   }
 
   const queryVector = embeddedQuestion[0]?.vector || [];
+  const scopedDocumentIds = input.documentIds?.length ? input.documentIds : null;
   const vectorHits = state.vectorStore.search({
     queryVector,
     limit: 4,
-    namespaces: ["global", `user:${input.userId}`],
+    namespaces: scopedDocumentIds
+      ? [`user:${input.userId}`]
+      : ["global", `user:${input.userId}`],
+    documentIds: scopedDocumentIds,
   });
 
   let webResponse;
