@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { expect } = require("chai");
 const sinon = require("sinon");
-const { createVectorStore } = require("../../rag/vectorStore");
+const { createFileVectorStore } = require("../../rag/storage/fileVectorStore");
 const { ingestText, ingestCorpusDirectory } = require("../../rag/pipeline");
 
 describe("rag/pipeline", () => {
@@ -19,7 +19,7 @@ describe("rag/pipeline", () => {
   });
 
   it("ingests text into vector store", async () => {
-    const vectorStore = createVectorStore({ persistPath: tempVectors });
+    const vectorStore = createFileVectorStore({ persistPath: tempVectors });
     const chunker = sinon.stub().returns(["chunk-a", "chunk-b"]);
     const embedder = sinon.stub().resolves([
       { id: 0, chunk: "chunk-a", vector: [1, 0] },
@@ -46,7 +46,7 @@ describe("rag/pipeline", () => {
     fs.writeFileSync(path.join(tempCorpusDir, "b.md"), "beta");
     fs.writeFileSync(path.join(tempCorpusDir, "skip.json"), "{}");
 
-    const vectorStore = createVectorStore({ persistPath: tempVectors });
+    const vectorStore = createFileVectorStore({ persistPath: tempVectors });
     const chunker = sinon.stub().callsFake((value) => [value]);
     const embedder = sinon.stub().callsFake(async (chunks) => chunks.map((chunk) => ({
       id: 0,

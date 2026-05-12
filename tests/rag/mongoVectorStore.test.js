@@ -1,23 +1,17 @@
 const { expect } = require("chai");
 const sinon = require("sinon");
-const { createDefaultVectorStore } = require("../../rag/vectorStoreFactory");
-const { createMongoVectorStore, __resetForTests } = require("../../rag/mongoVectorStore");
+const { createDefaultVectorStore } = require("../../rag/storage");
+const { createMongoVectorStore, __resetForTests } = require("../../rag/storage/mongoVectorStore");
 
-describe("rag/mongoVectorStore", () => {
+describe("rag/storage/mongoVectorStore", () => {
   afterEach(() => {
     sinon.restore();
     __resetForTests();
     delete process.env.RAG_MONGODB_URI;
   });
 
-  it("uses the file-backed store when RAG_MONGODB_URI is unset", () => {
-    const store = createDefaultVectorStore({
-      persistPath: require("path").join(__dirname, "tmp-default-vectors.json"),
-    });
-
-    expect(store.upsert).to.be.a("function");
-    expect(store.search).to.be.a("function");
-    expect(store.removeByDocument).to.be.a("function");
+  it("requires RAG_MONGODB_URI for the default vector store", () => {
+    expect(() => createDefaultVectorStore()).to.throw("RAG_MONGODB_URI is required");
   });
 
   it("upserts, searches, and removes records in Mongo", async () => {
@@ -47,11 +41,11 @@ describe("rag/mongoVectorStore", () => {
       lean: sinon.stub().resolves(records),
     });
 
-  const connection = {
+    const connection = {
       asPromise: sinon.stub().resolves(),
       model: sinon.stub().returns(model),
     };
-    const createConnection = sinon.stub(require("mongoose"), "createConnection").returns(connection);
+    sinon.stub(require("mongoose"), "createConnection").returns(connection);
 
     const store = createMongoVectorStore({ uri: "mongodb://127.0.0.1:27017/kfz-legal-rag-test" });
 

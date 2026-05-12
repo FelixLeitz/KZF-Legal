@@ -1,15 +1,13 @@
 /* eslint-disable no-console */
 const path = require("path");
 const dotenv = require("dotenv");
-const { createDefaultVectorStore } = require("../vectorStoreFactory");
+const { createDefaultVectorStore } = require("../storage");
 const { ingestCorpusDirectory } = require("../pipeline");
 
 dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
 
 async function run() {
-  const vectorStore = createDefaultVectorStore({
-    persistPath: path.join(__dirname, "..", "data", "vectors.json"),
-  });
+  const vectorStore = createDefaultVectorStore();
   await Promise.resolve(vectorStore.load());
 
   const result = await ingestCorpusDirectory({
