@@ -44,4 +44,72 @@ describe("rag/vectorStore", () => {
     expect(storeB.all()).to.have.length(1);
     expect(storeB.all()[0].id).to.equal("x");
   });
+
+  it("filters search results by documentIds", () => {
+    const store = createVectorStore({ persistPath: tempFile });
+    store.upsert([
+      {
+        id: "doc-a:0",
+        namespace: "user:1",
+        chunk: "alpha",
+        vector: [1, 0],
+        metadata: { documentId: "doc-a" },
+      },
+      {
+        id: "doc-b:0",
+        namespace: "user:1",
+        chunk: "beta",
+        vector: [1, 0],
+        metadata: { documentId: "doc-b" },
+      },
+    ]);
+
+    const results = store.search({
+      queryVector: [1, 0],
+      limit: 4,
+      namespaces: ["user:1"],
+      documentIds: ["doc-a"],
+    });
+
+    expect(results).to.have.length(1);
+    expect(results[0].metadata.documentId).to.equal("doc-a");
+  });
+
+  it("removes records for a document in a namespace", () => {
+    const store = createVectorStore({ persistPath: tempFile });
+    store.upsert([
+      {
+        id: "doc-a:0",
+        namespace: "user:1",
+        chunk: "alpha",
+        vector: [1, 0],
+        metadata: { documentId: "doc-a" },
+      },
+      {
+        id: "doc-b:0",
+        namespace: "user:1",
+        chunk: "beta",
+        vector: [0, 1],
+        metadata: { documentId: "doc-b" },
+      },
+      {
+        id: "global:0",
+        namespace: "global",
+        chunk: "shared",
+        vector: [1, 1],
+        metadata: { sourceId: "doc-a" },
+      },
+    ]);
+
+    const removed = store.removeByDocument({
+      namespace: "user:1",
+      documentId: "doc-a",
+    });
+
+    expect(removed).to.equal(1);
+    expect(store.all()).to.have.length(2);
+    expect(store.all().every((record) => (
+      record.namespace !== "user:1" || record.metadata.documentId !== "doc-a"
+    ))).to.equal(true);
+  });
 });
