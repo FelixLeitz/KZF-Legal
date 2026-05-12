@@ -66,6 +66,26 @@ describe("ragService (v2)", () => {
         expect(err.retryable).to.equal(false);
       }
     });
+
+    it("ingests a real PDF fixture through the document extractor", async () => {
+      const pdfFixture = path.join(__dirname, "fixtures/student-visa.pdf");
+      const vectorStore = { upsert: sinon.stub(), save: sinon.stub() };
+      ragService.__setState({
+        vectorStore,
+        chunker: sinon.stub().returns(["student visa text"]),
+        embedder: sinon.stub().resolves([{ chunk: "student visa text", vector: [1, 0] }]),
+      });
+
+      const result = await ragService.ingestDocument({
+        userId: "u1",
+        documentId: "doc-pdf",
+        filePath: pdfFixture,
+        mimeType: "application/pdf",
+      });
+
+      expect(result.chunks).to.equal(1);
+      expect(vectorStore.save.calledOnce).to.equal(true);
+    });
   });
 
   describe("submitQuery", () => {
