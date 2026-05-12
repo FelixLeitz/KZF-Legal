@@ -82,7 +82,6 @@ async function ingestDocument({ userId, documentId, filePath, mimeType }) {
 
   return IngestDocumentResponseSchema.parse({
     chunks,
-    extractedSummary: null,
     meta: { ingestMs: Date.now() - startedAt },
   });
 }

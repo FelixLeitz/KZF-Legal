@@ -37,7 +37,6 @@ const IngestDocumentInputSchema = z.object({
 
 const IngestDocumentResponseSchema = z.object({
   chunks: z.number().int().nonnegative(),
-  extractedSummary: z.string().nullable().optional(),
   meta: z.object({
     ingestMs: z.number().int().nonnegative(),
   }),
