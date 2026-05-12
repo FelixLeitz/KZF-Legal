@@ -166,4 +166,42 @@ describe("ragService (v2)", () => {
       });
     });
   });
+
+  describe("removeDocument", () => {
+    it("removes vectors for the document and persists when records were deleted", async () => {
+      const removeByDocument = sinon.stub().returns(2);
+      const save = sinon.stub();
+      ragService.__setState({
+        vectorStore: { removeByDocument, save },
+      });
+
+      const result = await ragService.removeDocument({
+        userId: "u1",
+        documentId: "doc-a",
+      });
+
+      expect(removeByDocument.calledOnceWith({
+        namespace: "user:u1",
+        documentId: "doc-a",
+      })).to.equal(true);
+      expect(save.calledOnce).to.equal(true);
+      expect(result.removed).to.equal(2);
+    });
+
+    it("does not persist when no vectors were removed", async () => {
+      const removeByDocument = sinon.stub().returns(0);
+      const save = sinon.stub();
+      ragService.__setState({
+        vectorStore: { removeByDocument, save },
+      });
+
+      const result = await ragService.removeDocument({
+        userId: "u1",
+        documentId: "doc-missing",
+      });
+
+      expect(save.called).to.equal(false);
+      expect(result.removed).to.equal(0);
+    });
+  });
 });
