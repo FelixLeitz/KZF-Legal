@@ -1,10 +1,9 @@
-const path = require("path");
 const { chunkText } = require("./chunker");
 const { embedChunks } = require("./embedder");
 const { retrieveWebContext } = require("./webRetriever");
 const { buildContext } = require("./contextBuilder");
 const { generateAnswer, MODEL } = require("./generator");
-const { createVectorStore } = require("./vectorStore");
+const { createDefaultVectorStore } = require("./storage");
 const { ingestText } = require("./pipeline");
 const { extractDocumentText } = require("./documentExtractor");
 const {
@@ -27,12 +26,17 @@ const _defaultFns = {
 
 const state = {
   ..._defaultFns,
-  vectorStore: createVectorStore({
-    persistPath: path.join(__dirname, "data", "vectors.json"),
-  }),
+  vectorStore: null,
 };
 
-state.vectorStore.load();
+function getVectorStore() {
+  if (!state.vectorStore) {
+    state.vectorStore = createDefaultVectorStore();
+    state.vectorStore.load();
+  }
+
+  return state.vectorStore;
+}
 
 function init() {
   return { ready: true };
@@ -64,16 +68,17 @@ async function ingestDocument({ userId, documentId, filePath, mimeType }) {
   }
 
   const namespace = `user:${input.userId}`;
+  const vectorStore = getVectorStore();
   const chunks = await ingestText({
     text,
     sourceId: input.documentId,
     namespace,
-    vectorStore: state.vectorStore,
+    vectorStore,
     chunker: state.chunker,
     embedder: state.embedder,
     metadata: { userId: input.userId, documentId: input.documentId },
   });
-  state.vectorStore.save();
+  await Promise.resolve(vectorStore.save());
 
   return IngestDocumentResponseSchema.parse({
     chunks,
@@ -95,14 +100,14 @@ async function submitQuery({ userId, question, documentIds }) {
 
   const queryVector = embeddedQuestion[0]?.vector || [];
   const scopedDocumentIds = input.documentIds?.length ? input.documentIds : null;
-  const vectorHits = state.vectorStore.search({
+  const vectorHits = await Promise.resolve(getVectorStore().search({
     queryVector,
     limit: 4,
     namespaces: scopedDocumentIds
       ? [`user:${input.userId}`]
       : ["global", `user:${input.userId}`],
     documentIds: scopedDocumentIds,
-  });
+  }));
 
   let webResponse;
   try {
@@ -138,13 +143,13 @@ async function submitQuery({ userId, question, documentIds }) {
 
 async function removeDocument({ userId, documentId }) {
   const input = RemoveDocumentInputSchema.parse({ userId, documentId });
-  const removed = state.vectorStore.removeByDocument({
+  const removed = await Promise.resolve(getVectorStore().removeByDocument({
     namespace: `user:${input.userId}`,
     documentId: input.documentId,
-  });
+  }));
 
   if (removed > 0) {
-    state.vectorStore.save();
+    await Promise.resolve(getVectorStore().save());
   }
 
   return RemoveDocumentResponseSchema.parse({ removed });
@@ -169,6 +174,7 @@ function __setState(nextState = {}) {
 
 function __resetState() {
   Object.assign(state, _defaultFns);
+  state.vectorStore = null;
 }
 
 module.exports = { init, ingestDocument, submitQuery, removeDocument, __setState, __resetState };

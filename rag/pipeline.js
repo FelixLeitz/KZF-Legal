@@ -55,7 +55,7 @@ async function ingestText({
     vector: item.vector,
     metadata: { sourceId, chunkIndex: index, ...metadata },
   }));
-  vectorStore.upsert(records);
+  await Promise.resolve(vectorStore.upsert(records));
   return records.length;
 }
 

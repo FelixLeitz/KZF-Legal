@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const { expect } = require("chai");
-const { createVectorStore, cosineSimilarity } = require("../../rag/vectorStore");
+const { createFileVectorStore, cosineSimilarity } = require("../../rag/storage/fileVectorStore");
 
-describe("rag/vectorStore", () => {
+describe("rag/storage/fileVectorStore", () => {
   const tempFile = path.join(__dirname, "tmp-vectors.json");
 
   afterEach(() => {
@@ -18,7 +18,7 @@ describe("rag/vectorStore", () => {
   });
 
   it("stores and searches by namespace", () => {
-    const store = createVectorStore({ persistPath: tempFile });
+    const store = createFileVectorStore({ persistPath: tempFile });
     store.upsert([
       { id: "a", namespace: "global", chunk: "alpha", vector: [1, 0] },
       { id: "b", namespace: "user:1", chunk: "beta", vector: [0, 1] },
@@ -35,18 +35,18 @@ describe("rag/vectorStore", () => {
   });
 
   it("persists and loads records", () => {
-    const storeA = createVectorStore({ persistPath: tempFile });
+    const storeA = createFileVectorStore({ persistPath: tempFile });
     storeA.upsert([{ id: "x", namespace: "global", chunk: "x", vector: [0.2, 0.8] }]);
     storeA.save();
 
-    const storeB = createVectorStore({ persistPath: tempFile });
+    const storeB = createFileVectorStore({ persistPath: tempFile });
     storeB.load();
     expect(storeB.all()).to.have.length(1);
     expect(storeB.all()[0].id).to.equal("x");
   });
 
   it("filters search results by documentIds", () => {
-    const store = createVectorStore({ persistPath: tempFile });
+    const store = createFileVectorStore({ persistPath: tempFile });
     store.upsert([
       {
         id: "doc-a:0",
@@ -76,7 +76,7 @@ describe("rag/vectorStore", () => {
   });
 
   it("removes records for a document in a namespace", () => {
-    const store = createVectorStore({ persistPath: tempFile });
+    const store = createFileVectorStore({ persistPath: tempFile });
     store.upsert([
       {
         id: "doc-a:0",
