@@ -1,4 +1,3 @@
-const fs = require("fs");
 const path = require("path");
 const { chunkText } = require("./chunker");
 const { embedChunks } = require("./embedder");
@@ -7,6 +6,7 @@ const { buildContext } = require("./contextBuilder");
 const { generateAnswer, MODEL } = require("./generator");
 const { createVectorStore } = require("./vectorStore");
 const { ingestText } = require("./pipeline");
+const { extractDocumentText } = require("./documentExtractor");
 const {
   SubmitQueryInputSchema,
   SubmitQueryResponseSchema,
@@ -22,6 +22,7 @@ const _defaultFns = {
   webRetriever: retrieveWebContext,
   contextBuilder: buildContext,
   generator: generateAnswer,
+  documentExtractor: extractDocumentText,
 };
 
 const state = {
@@ -50,8 +51,15 @@ async function ingestDocument({ userId, documentId, filePath, mimeType }) {
 
   let text;
   try {
-    text = fs.readFileSync(input.filePath, "utf8");
+    text = await state.documentExtractor({
+      filePath: input.filePath,
+      mimeType: input.mimeType,
+    });
   } catch (err) {
+    if (err.code) {
+      throw err;
+    }
+
     throw makeRagError("RAG_VALIDATION_ERROR", `Cannot read file: ${err.message}`, false);
   }
 
@@ -143,7 +151,15 @@ async function removeDocument({ userId, documentId }) {
 }
 
 function __setState(nextState = {}) {
-  const keys = ["vectorStore", "chunker", "embedder", "webRetriever", "contextBuilder", "generator"];
+  const keys = [
+    "vectorStore",
+    "chunker",
+    "embedder",
+    "webRetriever",
+    "contextBuilder",
+    "generator",
+    "documentExtractor",
+  ];
   for (const key of keys) {
     if (Object.hasOwn(nextState, key)) {
       state[key] = nextState[key];
