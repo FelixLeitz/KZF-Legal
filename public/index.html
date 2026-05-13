@@ -1,33 +1,43 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- basic metadata and page setup -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- page title -->
     <title>KZF Legal</title>
+
+    <!-- google font import -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- main stylesheet -->
     <link rel="stylesheet" href="./css/styles.css" />
   </head>
 
   <body>
-    <!-- login page -->
+
+    <!-- login screen shown before entering the application home page -->
     <div id="page-login" class="auth-screen">
       <div class="auth-card">
 
-        <!-- logo -->
+        <!-- app logo -->
         <div class="auth-logo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3L4 7v5c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V7L12 3z"/>
           </svg>
         </div>
 
-        <!-- heading -->
+        <!-- login heading -->
         <h1 class="auth-title">Welcome back</h1>
         <p class="auth-subtitle">Sign in to your account</p>
 
-        <!-- error message: hidden by default, shown on failed login -->
-        <div id="login-error" class="form-error hidden">Incorrect email or password. Please try again.</div>
+        <!-- login error message -->
+        <div id="login-error" class="form-error hidden">
+          incorrect email or password. please try again.
+        </div>
 
         <!-- email input -->
         <div class="form-group">
@@ -38,69 +48,78 @@
         <!-- password input -->
         <div class="form-group">
           <label class="form-label" for="login-password">Password</label>
-          <input class="form-input" type="password" id="login-password" placeholder="Enter Password" autocomplete="current-password" />
+          <input class="form-input" type="password" id="login-password" placeholder="enter password" autocomplete="current-password" />
         </div>
 
         <!-- login button -->
         <button class="btn-primary" id="btn-login">Sign in</button>
 
-        <!-- links for password reset and navigation to register page -->
+        <!-- auth links -->
         <div class="auth-links">
-          <a href="#" class="auth-link" id="link-forgot">Forgot password?</a>
-          <div class="auth-divider"><span>or</span></div>
-          <p class="auth-switch">Don't have an account? <a href="#" class="auth-link" id="link-to-register">Register</a></p>
-        </div>
+          <a href="#" class="auth-link" id="link-forgot">forgot password?</a>
 
+          <div class="auth-divider"><span>or</span></div>
+
+          <p class="auth-switch">
+            don't have an account?
+            <a href="#" class="auth-link" id="link-to-register">register</a>
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- register page -->
+    <!-- register screen -->
     <div id="page-register" class="auth-screen hidden">
       <div class="auth-card">
 
-        <!-- logo + heading -->
+        <!-- logo -->
         <div class="auth-logo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3L4 7v5c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V7L12 3z"/>
           </svg>
         </div>
+
+        <!-- register heading -->
         <h1 class="auth-title">Create account</h1>
         <p class="auth-subtitle">Get started with KZF Legal</p>
 
-        <!-- error message: hidden by default, shown on failed registration -->
-        <div id="register-error" class="form-error hidden">Something went wrong. Please try again.</div>
+        <!-- register error -->
+        <div id="register-error" class="form-error hidden">
+          something went wrong. please try again.
+        </div>
 
         <!-- email input -->
         <div class="form-group">
           <label class="form-label" for="reg-email">Email</label>
           <input class="form-input" type="email" id="reg-email" placeholder="you@email.com" autocomplete="email" />
         </div>
-        
+
         <!-- password input -->
         <div class="form-group">
           <label class="form-label" for="reg-password">Password</label>
-          <input class="form-input" type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" />
+          <input class="form-input" type="password" id="reg-password" placeholder="min. 8 characters" autocomplete="new-password" />
         </div>
 
         <!-- register button -->
         <button class="btn-primary" id="btn-register">Create account</button>
 
-        <!-- link back to login -->
+        <!-- switch to login -->
         <div class="auth-links">
-          <p class="auth-switch">Already have an account? <a href="#" class="auth-link" id="link-to-login">Sign in</a></p>
+          <p class="auth-switch">
+            already have an account?
+            <a href="#" class="auth-link" id="link-to-login">sign in</a>
+          </p>
         </div>
-
       </div>
     </div>
 
-
-    <!-- main app shell-->
+    <!-- main application shell -->
     <div id="app-shell" class="app-shell hidden">
 
-      <!-- SIDEBAR: persistent left navigation -->
+      <!-- sidebar navigation -->
       <nav class="sidebar" id="sidebar">
 
-        <!-- app branding (logo + name) -->
+        <!-- brand section -->
         <div class="sb-brand">
           <div class="sb-logo">
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -110,276 +129,267 @@
           <span class="sb-wordmark">KZF</span>
         </div>
 
-        <!-- navigation buttons — data-page tells JS which page to show -->
+        <!-- navigation items -->
         <div class="sb-nav">
 
-          <!-- home -->
+          <!-- home page button -->
           <button class="sb-item active" data-page="home" title="Home">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <polyline points="3 9 12 2 21 9 21 20 15 20 15 14 9 14 9 20 3 20 3 9"/>
             </svg>
             <span class="sb-label">Home</span>
           </button>
 
-          <!-- new chat -->
+          <!-- new chat button -->
           <button class="sb-item" data-page="chat" title="New Chat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             <span class="sb-label">New Chat</span>
           </button>
 
-          <!-- upload -->
-          <button class="sb-item" data-page="upload" title="Upload">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-              <path d="M20.4 6A5 5 0 0 0 16 3H8a5 5 0 0 0-4.4 7.4"/>
-            </svg>
-            <span class="sb-label">Upload</span>
-          </button>
-
-          <!-- history -->
-          <button class="sb-item" data-page="history" title="History">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <!-- documents page (read-only storage) -->
+          <button class="sb-item" data-page="documents" title="My Documents">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span class="sb-label">My Docs</span>
+          </button>
+
+          <!-- history page -->
+          <button class="sb-item" data-page="history" title="History">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
             </svg>
             <span class="sb-label">History</span>
           </button>
 
         </div>
 
-        <!-- account + logout buttons pinned to the bottom of the sidebar -->
+        <!-- sidebar footer actions -->
         <div class="sb-footer">
+
+          <!-- account button -->
           <button class="sb-item" id="btn-account" title="Account">
-            <!-- avatar shows the user's first initial, set by JS after login -->
             <div class="sb-avatar" id="sb-avatar-initials">U</div>
             <span class="sb-label">Account</span>
           </button>
+
+          <!-- logout button -->
           <button class="sb-item sb-logout" id="btn-logout" title="Sign out">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
             <span class="sb-label">Sign out</span>
           </button>
-        </div>
 
+        </div>
       </nav>
 
-      <!-- PAGE AREA: the right side — only one inner-page visible at a time -->
+      <!-- main page container -->
       <main class="page-area" id="page-area">
-
 
         <!-- home page -->
         <section id="page-home" class="inner-page">
 
-          <!-- greeting heading — email prefix injected by JS after login -->
+          <!-- page header -->
           <div class="page-header">
             <div>
               <h1 class="page-title" id="home-greeting">Hello</h1>
-              <p class="page-subtitle">How can we help you today?</p>
+              <p class="page-subtitle">how can we help you today?</p>
             </div>
           </div>
 
-          <!-- button to open a fresh chat session -->
+          <!-- start chat button -->
           <button class="btn-new-chat" id="home-new-chat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            Start a new chat
+            start a new chat
           </button>
 
-          <!-- quick question input: types a question and goes straight to chat -->
+          <!-- quick question input for starting chats directly from home page -->
           <div class="home-ask-box">
-            <input type="text" class="home-ask-input" id="home-ask-input" placeholder="Or ask a question directly…" />
+            <input type="text" class="home-ask-input" id="home-ask-input" placeholder="or ask a question directly…" />
             <button class="home-ask-send" id="home-ask-send">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             </button>
           </div>
 
-          <!-- recent conversations section header -->
+          <!-- recent conversations -->
           <div class="section-header">
-            <h2 class="section-title">Recent conversations</h2>
-            <a href="#" class="section-link" id="home-view-all">View all</a>
+            <h2 class="section-title">recent conversations</h2>
+            <a href="#" class="section-link" id="home-view-all">view all</a>
           </div>
 
-          <!-- recent conversations list — populated dynamically by renderHomeRecent() -->
           <div class="recent-list" id="home-recent-list"></div>
 
-          <!-- quick action shortcut cards -->
+          <!-- quick actions -->
           <div class="quick-actions">
+
             <button class="qa-card" data-page="history">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
-              <span>Conversation history</span>
+              <span>conversation history</span>
             </button>
-            <button class="qa-card" data-page="upload">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.4 6A5 5 0 0 0 16 3H8a5 5 0 0 0-4.4 7.4"/>
-              </svg>
-              <span>Upload documents</span>
+
+            <button class="qa-card" data-page="documents">
+              <span>my documents</span>
             </button>
+
           </div>
 
-          <!-- legal disclaimer required by SRS -->
-          <p class="disclaimer">AI responses are not formal legal advice. Always consult a registered legal practitioner for official guidance.</p>
+          <!-- disclaimer -->
+          <p class="disclaimer">
+            ai responses are not formal legal advice. always consult a registered legal practitioner.
+          </p>
+
         </section>
 
         <!-- chat page -->
         <section id="page-chat" class="inner-page hidden chat-layout">
 
-          <!-- chat header: session title + new chat button -->
+          <!-- chat header -->
           <div class="chat-header">
-            <div class="chat-title-row">
-              <!-- title updates to the first message the user sends -->
-              <h1 class="page-title" id="chat-session-title">New conversation</h1>
-            </div>
-            <button class="btn-icon" id="btn-new-chat-header" title="New chat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <h1 class="page-title" id="chat-session-title">new conversation</h1>
+
+            <button class="btn-icon" id="btn-new-chat-header" title="new chat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
             </button>
           </div>
 
-          <!-- messages container — chat.js appends bubbles here dynamically -->
+          <!-- chat messages container -->
           <div class="chat-messages" id="chat-messages">
 
-            <!-- empty state: shown before the user sends any message -->
+            <!-- empty state -->
             <div class="chat-empty" id="chat-empty-state">
-              <div class="chat-empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-              </div>
-              <p class="chat-empty-text">Ask a question about Australian immigration law</p>
-
-              <!-- suggestion chips: clicking one pre-fills and sends the question -->
-              <div class="chat-suggestions">
-                <button class="suggestion-chip" data-q="Can I work on a student visa?">Can I work on a student visa?</button>
-                <button class="suggestion-chip" data-q="What documents do I need for a partner visa?">What documents do I need for a partner visa?</button>
-                <button class="suggestion-chip" data-q="How do I apply for permanent residency?">How do I apply for permanent residency?</button>
-              </div>
+              <p>ask a question about australian immigration law</p>
             </div>
 
           </div>
 
-          <!-- chat input area pinned to the bottom -->
+          <!-- chat input footer -->
           <div class="chat-footer">
-            <p class="disclaimer disclaimer-chat">AI responses are not formal legal advice</p>
+
+          <!-- displays uploaded files and upload progress during chat -->
+          <div class="attachment-panel" id="attachment-panel">
+
+          <!-- upload progress -->
+          <div class="attach-progress-row hidden" id="attach-progress-row">
+            <p class="attach-filename" id="attach-filename"></p>
+
+          <div class="attach-progress-bar">
+            <div class="attach-progress-fill" id="attach-progress-fill"></div>
+          </div>
+            <span class="attach-progress-label" id="attach-progress-label"></span>
+          </div>
+
+          <!-- uploaded file chips -->
+          <div class="attach-chips-row" id="attach-chips-row"></div>
+
+          </div>
+
+            <!-- file input -->
+            <input type="file" id="chat-file-input" accept=".pdf,.doc,.docx" hidden />
+
+            <!-- input row -->
             <div class="chat-input-row">
 
-              <!-- attach button: navigates to the upload page -->
-              <button class="btn-attach" id="btn-attach" title="Upload a document">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-                  <path d="M20.4 6A5 5 0 0 0 16 3H8a5 5 0 0 0-4.4 7.4"/>
+              <!-- attach button -->
+              <button class="btn-attach" id="btn-attach" title="attach document">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                 </svg>
               </button>
 
-              <!-- textarea: auto-grows as the user types (handled in chat.js) -->
-              <textarea class="chat-input" id="chat-input" placeholder="Ask a question…" rows="1"></textarea>
+              <!-- message input -->
+              <textarea class="chat-input" id="chat-input" placeholder="ask a question…" rows="1"></textarea>
 
-              <!-- send button: disabled until textarea has text -->
+              <!-- send button -->
               <button class="chat-send-btn" id="chat-send-btn" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
               </button>
 
             </div>
           </div>
+
         </section>
 
-        <!-- upload page -->
-        <section id="page-upload" class="inner-page hidden">
+        <!-- documents page -->
+        <section id="page-documents" class="inner-page hidden">
 
-          <!-- page header -->
           <div class="page-header">
-            <div>
-              <h1 class="page-title">Upload documents</h1>
-              <p class="page-subtitle">Add personal documents to personalise your legal guidance</p>
-            </div>
+            <h1 class="page-title">my documents</h1>
+            <p class="page-subtitle">uploaded files across conversations</p>
           </div>
 
-          <!-- drag and drop zone — upload.js attaches all drag/drop events here -->
-          <div class="drop-zone" id="drop-zone">
-            <!-- hidden file input triggered by browse button or drop zone click -->
-            <input type="file" id="file-input" accept=".pdf,.doc,.docx" multiple hidden />
-            <div class="drop-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.4 6A5 5 0 0 0 16 3H8a5 5 0 0 0-4.4 7.4"/>
-              </svg>
-            </div>
-            <p class="drop-title">Drag &amp; drop your files here</p>
-            <p class="drop-sub">or <button class="drop-browse" id="drop-browse">browse files</button></p>
-            <p class="drop-hint">PDF, DOC, DOCX — up to 10MB each</p>
+          <!-- upload hint -->
+          <div class="docs-upload-hint">
+            <p>upload documents inside a chat using the paperclip button</p>
           </div>
 
-          <!-- uploaded files list — hidden until at least one file is added -->
-          <div id="upload-file-list" class="upload-file-list hidden">
-            <h2 class="section-title" style="margin-bottom: 12px;">Uploaded files</h2>
-            <!-- file items are injected here by upload.js -->
-            <div id="file-items-container"></div>
+          <!-- loading state -->
+          <div id="docs-loading" class="docs-loading hidden">
+            loading documents…
           </div>
 
-          <!-- privacy disclaimer -->
-          <p class="disclaimer" style="margin-top: 24px;">Documents are linked to your account only and kept securely private.</p>
+          <!-- empty state -->
+          <div id="docs-empty" class="docs-empty hidden">
+            no documents yet
+          </div>
+
+          <!-- document list -->
+          <div id="docs-list" class="docs-list"></div>
+
         </section>
-
 
         <!-- history page -->
         <section id="page-history" class="inner-page hidden">
 
-          <!-- page header -->
           <div class="page-header">
-            <div>
-              <h1 class="page-title">Conversation history</h1>
-              <p class="page-subtitle">Browse and resume your past conversations</p>
-            </div>
+            <h1 class="page-title">conversation history</h1>
           </div>
 
-          <!-- search bar + filter chips -->
+          <!-- search and filters -->
           <div class="history-controls">
 
-            <!-- text search: filters the list as the user types -->
-            <div class="search-bar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" id="history-search" placeholder="Search conversations…" />
+            <input type="text" id="history-search" placeholder="search conversations…" />
+
+            <div class="filter-chips">
+              <button class="filter-chip active" data-filter="all">all</button>
+              <button class="filter-chip" data-filter="week">this week</button>
+              <button class="filter-chip" data-filter="month">this month</button>
             </div>
 
-            <!-- filter chips: All / This week / This month -->
-            <div class="filter-chips" id="filter-chips">
-              <button class="filter-chip active" data-filter="all">All</button>
-              <button class="filter-chip" data-filter="week">This week</button>
-              <button class="filter-chip" data-filter="month">This month</button>
-            </div>
           </div>
 
-          <!-- history list — conversation items injected here by renderHistory() -->
+          <!-- container where previous conversation history is rendered -->
           <div id="history-list" class="history-list"></div>
-
-          <!-- privacy note -->
-          <p class="disclaimer" style="margin-top: 24px;">All conversations are private to your account.</p>
         </section>
+
       </main>
     </div>
-    <!-- end app-shell -->
 
-
-    <!-- toast notification: pops up at the bottom for success/error messages -->
+    <!-- toast notifications -->
     <div id="toast" class="toast hidden"></div>
 
-    <!-- javascript files -->
+    <!-- frontend JavaScript modules -->
+    <script src="/socket.io/socket.io.js"></script>
+
     <script src="./js/socket.js"></script>
     <script src="./js/upload.js"></script>
     <script src="./js/chat.js"></script>

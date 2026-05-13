@@ -1,279 +1,193 @@
+// upload.js file 
+// responsibilities: handles document uploads within chat sessions, opens file picker, validates files, upload to backend,
+// displays progress and upload status, formates file size, provides upload doc ID's to chat.js
+
 (function () {
 
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const browseBtn = document.getElementById('drop-browse');
-  const fileListEl = document.getElementById('upload-file-list');
-  const fileItemsCtr = document.getElementById('file-items-container');
+  // dom refs 
+  const fileInput     = document.getElementById('chat-file-input');
+  const attachBtn     = document.getElementById('btn-attach');
+  const attachPanel   = document.getElementById('attachment-panel');
+  const progressRow   = document.getElementById('attach-progress-row');
+  const progressFill  = document.getElementById('attach-progress-fill');
+  const progressLabel = document.getElementById('attach-progress-label');
+  const attachFilename= document.getElementById('attach-filename');
+  const chipsRow      = document.getElementById('attach-chips-row');
 
-  if (!dropZone) return;
+  // stop script if upload UI elements do not exist
+  if (!fileInput || !attachBtn) return;
 
+  // maximum allowed upload file size
   const MAX_SIZE_MB = 10;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+  // supported document file types
   const ALLOWED_EXT = ['.pdf', '.doc', '.docx'];
 
-  const uploadedFiles = [];
+  // temporarily stores uploaded documents attached to current chat
+  let pendingDocuments = [];
 
-  browseBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    fileInput.click();
-  });
-
-  dropZone.addEventListener('click', (e) => {
-    if (e.target === browseBtn) return;
-    fileInput.click();
-  });
+  // opens native file picker when attachment button is clicked
+  attachBtn.addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', () => {
-    handleFiles(Array.from(fileInput.files));
-    fileInput.value = '';
-  });
-
-  dropZone.addEventListener('dragenter', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragleave', (e) => {
-    if (!dropZone.contains(e.relatedTarget)) {
-      dropZone.classList.remove('dragover');
+    if (fileInput.files.length > 0) {
+      handleFile(fileInput.files[0]);
+      fileInput.value = '';
     }
   });
 
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-
-    dropZone.classList.remove('dragover');
-
-    const files = Array.from(e.dataTransfer.files);
-
-    handleFiles(files);
-  });
-
-  function handleFiles(files) {
-    files.forEach(file => {
-      const validation = validateFile(file);
-
-      if (!validation.ok) {
-        showToast(validation.message, 'error');
-        return;
-      }
-
-      addFileToList(file);
-    });
-  }
-
+  // validates file type and size before upload
   function validateFile(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
 
     if (!ALLOWED_EXT.includes(ext)) {
-      return {
-        ok: false,
-        message: `"${file.name}" is not supported. Please upload PDF, DOC, or DOCX files.`
-      };
+      return { ok: false, message: 'Only PDF, DOC, DOCX allowed.' };
     }
 
     if (file.size > MAX_SIZE_BYTES) {
-      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-
-      return {
-        ok: false,
-        message: `"${file.name}" is ${sizeMB}MB — maximum file size is ${MAX_SIZE_MB}MB.`
-      };
-    }
-
-    if (uploadedFiles.find(f => f.name === file.name)) {
-      return {
-        ok: false,
-        message: `"${file.name}" has already been uploaded.`
-      };
+      return { ok: false, message: 'File too large (max 10MB).' };
     }
 
     return { ok: true };
   }
 
-  function addFileToList(file) {
-    const id = 'file-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  // processes selected file after validation
+  function handleFile(file) {
+    const check = validateFile(file);
+    if (!check.ok) return showToast(check.message, 'error');
 
-    const entry = {
-      id,
-      name: file.name,
-      size: file.size,
-      status: 'uploading',
-      file
-    };
-
-    uploadedFiles.push(entry);
-
-    fileListEl.classList.remove('hidden');
-
-    renderFileItem(entry);
-
-    uploadFile(entry);
+    uploadFile(file);
   }
 
-  function renderFileItem(entry) {
-    const el = document.createElement('div');
+  // uploads selected document to backend API
+  async function uploadFile(file) {
 
-    el.className = 'file-item';
-    el.id = entry.id;
+    showProgress(file.name);
 
-    el.innerHTML = fileItemHTML(entry);
-
-    fileItemsCtr.prepend(el);
-
-    el.querySelector('.file-remove')
-      .addEventListener('click', () => removeFile(entry.id));
-  }
-
-  function fileItemHTML(entry) {
-    const sizeLabel = formatBytes(entry.size);
-
-    const statusHTML = entry.status === 'uploading'
-      ? `<span class="file-status-uploading">Uploading…</span>`
-      : entry.status === 'done'
-        ? `<div class="file-status-ok">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-               <polyline points="20 6 9 17 4 12"/>
-             </svg>
-           </div>`
-        : `<span style="color:var(--red-text);font-size:11px;font-weight:600;">Failed</span>`;
-
-    return `
-      <div class="file-item-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-      </div>
-
-      <div class="file-item-body">
-        <p class="file-name">${escapeHtml(entry.name)}</p>
-        <p class="file-size">${sizeLabel}</p>
-      </div>
-
-      ${statusHTML}
-
-      <button class="file-remove" title="Remove">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    `;
-  }
-
-  function updateFileStatus(id, status) {
-    const entry = uploadedFiles.find(f => f.id === id);
-
-    if (!entry) return;
-
-    entry.status = status;
-
-    const el = document.getElementById(id);
-
-    if (el) {
-      el.innerHTML = fileItemHTML(entry);
-
-      el.querySelector('.file-remove')
-        .addEventListener('click', () => removeFile(id));
-    }
-  }
-
-  async function uploadFile(entry) {
     try {
-      const formData = new FormData();
+      // create multipart form data for file upload
+      const form = new FormData();
+      form.append('document', file);
 
-      formData.append('file', entry.file);
+      if (state.currentSessionId) {
+        form.append('chatId', state.currentSessionId);
+      }
 
-      const res = await fetch('/api/upload-page', {
+      // visually update upload progress bar during upload
+      animateProgress(70);
+
+      const res = await fetch('/api/documents/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + state.token
-        },
-        body: formData
+        headers: { Authorization: 'Bearer ' + state.token },
+        body: form
       });
 
       const json = await res.json();
 
-      if (!res.ok) {
-        throw new Error(json.message || 'Upload failed');
+      if (!res.ok) throw new Error(json.message || 'Upload failed');
+
+      const { documentId, chatId } = json.data;
+
+      if (chatId && !state.currentSessionId) {
+        state.currentSessionId = chatId;
       }
 
-      updateFileStatus(entry.id, 'done');
+      animateProgress(100);
+      setLabel('Processing…');
 
-      showToast('"' + entry.name + '" uploaded successfully');
+      // store uploaded document metadata for chat usage
+      pendingDocuments.push({
+        documentId,
+        filename: file.name,
+        size: file.size
+      });
+
+      setTimeout(() => {
+        hideProgress();
+        addChip(file.name, file.size, documentId);
+        showToast('Uploaded: ' + file.name);
+      }, 500);
 
     } catch (err) {
-      updateFileStatus(entry.id, 'error');
-
-      showToast(
-        'Upload failed: ' + (err.message || 'Unknown error'),
-        'error'
-      );
-
-      console.error('[upload.js] Upload error:', err);
+      hideProgress();
+      showToast(err.message || 'Upload failed', 'error');
     }
   }
 
-  async function removeFile(id) {
-    const entry = uploadedFiles.find(f => f.id === id);
+  // UI 
+  // displays upload progress UI and filename
+  function showProgress(name) {
+    if (!attachPanel || !progressRow) return;
 
-    if (entry && entry.status === 'done') {
-      try {
+    attachPanel.classList.add('active');
+    progressRow.classList.remove('hidden');
 
-      } catch (err) {
-        console.warn(
-          '[upload.js] Could not delete file from backend:',
-          err.message
-        );
-      }
-    }
-
-    const idx = uploadedFiles.findIndex(f => f.id === id);
-
-    if (idx > -1) {
-      uploadedFiles.splice(idx, 1);
-    }
-
-    const el = document.getElementById(id);
-
-    if (el) {
-      el.remove();
-    }
-
-    if (uploadedFiles.length === 0) {
-      fileListEl.classList.add('hidden');
-    }
-
-    showToast('File removed');
+    if (attachFilename) attachFilename.textContent = name;
+    if (progressFill) progressFill.style.width = '0%';
+    setLabel('Uploading…');
   }
 
-  function formatBytes(bytes) {
-    if (bytes < 1024) {
-      return bytes + ' B';
-    }
+  // hides upload progress UI after completion
+  function hideProgress() {
+    if (progressRow) progressRow.classList.add('hidden');
 
-    if (bytes < 1024 * 1024) {
-      return (bytes / 1024).toFixed(1) + ' KB';
+    if (chipsRow && chipsRow.children.length === 0) {
+      attachPanel?.classList.remove('active');
     }
+  }
 
+  function setLabel(text) {
+    if (progressLabel) progressLabel.textContent = text;
+  }
+
+  // updates progress bar width visually
+  function animateProgress(target) {
+    if (!progressFill) return;
+    progressFill.style.width = target + '%';
+  }
+
+  // creates removable UI chip for uploaded document
+  function addChip(name, size, id) {
+    const chip = document.createElement('div');
+    chip.className = 'attach-chip';
+    chip.dataset.documentId = id;
+
+    chip.innerHTML = `
+      <span>${name}</span>
+      <small>${format(size)}</small>
+      <button class="remove">×</button>
+    `;
+
+    // removes uploaded document from UI and backend storage
+    chip.querySelector('.remove').onclick = async () => {
+      pendingDocuments = pendingDocuments.filter(d => d.documentId !== id);
+      chip.remove();
+
+      await fetch('/api/documents/' + id, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + state.token }
+      });
+    };
+
+    chipsRow.appendChild(chip);
+  }
+
+  // converts file size into readable format (B, KB, MB)
+  function format(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  window.UploadModule = { handleFiles };
+  // expose upload helper methods globally for chat.js usage
+  window.UploadModule = {
+    getDocumentIds: () => pendingDocuments.map(d => d.documentId),
+    getAttachedFiles: () => [...pendingDocuments],
+    clearAttachments: () => {
+      pendingDocuments = [];
+      chipsRow.innerHTML = '';
+      attachPanel?.classList.remove('active');
+    }
+  };
 
 })();

@@ -913,3 +913,295 @@ input, textarea { font-family: inherit; }
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+.attachment-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, padding 0.25s ease;
+  padding: 0 14px;
+}
+
+/* when active, slide the panel open */
+.attachment-panel.active {
+  max-height: 120px;
+  padding: 10px 14px 4px;
+}
+
+.attach-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.attach-progress-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background: var(--sage-pale);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sage-dark);
+}
+.attach-progress-icon svg { width: 15px; height: 15px; }
+
+.attach-progress-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.attach-filename {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+/* the track + fill bar */
+.attach-progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.attach-progress-fill {
+  height: 100%;
+  background: var(--sage);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.attach-progress-label {
+  font-size: 11px;
+  color: var(--text-hint);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.attach-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+
+/* individual chip — the collapsed file pill after upload */
+.attach-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 8px 4px 6px;
+  transition: border-color 0.12s;
+}
+
+.attach-chip.processing { border-color: var(--sage-light); }
+.attach-chip.ingested   { border-color: var(--sage); }
+.attach-chip.failed     { border-color: var(--red-border); }
+
+.attach-chip-icon {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  background: var(--sage-pale);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sage-dark);
+}
+.attach-chip-icon svg { width: 11px; height: 11px; }
+
+.attach-chip-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.attach-chip-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.attach-chip-size {
+  font-size: 10px;
+  color: var(--text-hint);
+}
+
+.attach-chip-remove {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-hint);
+  transition: background 0.12s, color 0.12s;
+}
+.attach-chip-remove svg { width: 10px; height: 10px; }
+.attach-chip-remove:hover { background: var(--red-bg); color: var(--red-text); }
+
+/* hint banner explaining where to upload */
+.docs-upload-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--sage-pale);
+  border: 1px solid var(--sage-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--sage-dark);
+}
+.docs-upload-hint svg { width: 18px; height: 18px; min-width: 18px; color: var(--sage); }
+.docs-upload-hint strong { font-weight: 700; }
+
+/* loading spinner */
+.docs-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--text-hint);
+  font-size: 13px;
+}
+
+.docs-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--sage);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* empty state */
+.docs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 56px 0;
+  color: var(--text-hint);
+  font-size: 14px;
+  text-align: center;
+}
+.docs-empty svg { width: 40px; height: 40px; color: var(--border-mid); }
+
+/* document list */
+.docs-list { display: flex; flex-direction: column; gap: 8px; }
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.doc-item:hover { border-color: var(--sage-light); box-shadow: var(--shadow-sm); }
+
+.doc-item-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  background: var(--sage-pale);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sage-dark);
+}
+.doc-item-icon svg { width: 18px; height: 18px; }
+
+.doc-item-body { flex: 1; min-width: 0; }
+.doc-filename {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-meta { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+
+/* status badge */
+.doc-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.doc-status--pending    { background: #FEF3C7; color: #92400E; }
+.doc-status--processing { background: #DBEAFE; color: #1E40AF; }
+.doc-status--ingested   { background: var(--green-bg); color: var(--green-text); }
+.doc-status--failed     { background: var(--red-bg); color: var(--red-text); }
+
+/* delete button */
+.doc-delete {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--radius-xs);
+  color: var(--text-hint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.doc-delete svg { width: 15px; height: 15px; }
+.doc-delete:hover { background: var(--red-bg); color: var(--red-text); }
+
+.bubble-docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* individual doc chip inside the bubble */
+.bubble-doc-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 3px 9px 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.bubble-doc-chip svg {
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  opacity: 0.85;
+}
