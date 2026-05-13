@@ -81,8 +81,28 @@
     const typingEl = appendTyping();
 
     try {
+      let chatId = state.currentSessionId;
 
-      const res = await fetch('/api/chat', {
+      if (!chatId) {
+        const createRes = await fetch('/api/chat/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + state.token
+          },
+          body: JSON.stringify({
+            title: text.length > 50 ? text.slice(0, 50) : text,
+          })
+        });
+
+        const createJson = await createRes.json();
+        if (!createRes.ok) throw new Error(createJson.message || 'Could not start chat');
+
+        chatId = createJson.data.chatId;
+        state.currentSessionId = chatId;
+      }
+
+      const res = await fetch('/api/chat/' + chatId, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,18 +110,15 @@
         },
         body: JSON.stringify({
           query: text,
-          chatId: state.currentSessionId || undefined,
           documentIds: documentIds.length ? documentIds : undefined
         })
       });
 
-      // send chat request to backend API
       const json = await res.json();
 
       if (!res.ok) throw new Error(json.message || 'Chat failed');
 
-      const { chatId, messageId } = json.data;
-      if (chatId) state.currentSessionId = chatId;
+      const { messageId } = json.data;
 
       // receives live AI response updates from socket.js
       window._onChatUpdated = (payload) => {
