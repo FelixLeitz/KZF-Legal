@@ -36,6 +36,25 @@
     }
   });
 
+  async function ensureChatExists() {
+    if (state.currentSessionId) return state.currentSessionId;
+
+    const res = await fetch('/api/chat/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.token
+      },
+      body: JSON.stringify({ title: 'New conversation' })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Could not create chat before upload');
+
+    state.currentSessionId = json.data.chatId;
+    return state.currentSessionId;
+  }
+
   // validates file type and size before upload
   function validateFile(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
@@ -65,18 +84,16 @@
     showProgress(file.name);
 
     try {
+      const chatId = await ensureChatExists();
+
       // create multipart form data for file upload
       const form = new FormData();
       form.append('document', file);
 
-      if (state.currentSessionId) {
-        form.append('chatId', state.currentSessionId);
-      }
-
       // visually update upload progress bar during upload
       animateProgress(70);
 
-      const res = await fetch('/api/documents/upload', {
+      const res = await fetch('/api/documents/upload/' + chatId, {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + state.token },
         body: form
@@ -86,11 +103,7 @@
 
       if (!res.ok) throw new Error(json.message || 'Upload failed');
 
-      const { documentId, chatId } = json.data;
-
-      if (chatId && !state.currentSessionId) {
-        state.currentSessionId = chatId;
-      }
+      const { documentId } = json.data;
 
       animateProgress(100);
       setLabel('Processing…');

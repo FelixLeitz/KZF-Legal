@@ -35,29 +35,26 @@
     });
 
     // chat success event: receives successful chat response from backend, check if frontend update handler exists, and sends response data to frontend for UI update
-    socket.on('chat:response', (payload) => {
+    socket.on('chat:update', (payload) => {
       if (typeof window._onChatUpdated === 'function') {
-        window._onChatUpdated({
-          messageId: payload.messageId,
-          status: 'completed',
-          response: {
-            answer: payload.answer,
-            citations: payload.citations || []
-          }
-        });
-      }
-    });
-
-    // chat error event: receives failed chat response from backend, check if frontend update handler exists and sends error message if none provided
-    socket.on('chat:error', (payload) => {
-      if (typeof window._onChatUpdated === 'function') {
-        window._onChatUpdated({
-          messageId: payload.messageId,
-          status: 'failed',
-          error: {
-            message: payload.message || 'Something went wrong'
-          }
-        });
+        if (payload.status === 'completed') {
+          window._onChatUpdated({
+            messageId: payload.messageId,
+            status: 'completed',
+            response: {
+              answer: payload.response.answer,
+              citations: payload.response.citations || []
+            }
+          });
+        } else if (payload.status === 'failed') {
+          window._onChatUpdated({
+            messageId: payload.messageId,
+            status: 'failed',
+            error: {
+              message: payload.message || 'Something went wrong'
+            }
+          });
+        }
       }
     });
 

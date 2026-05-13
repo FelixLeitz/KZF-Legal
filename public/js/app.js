@@ -251,7 +251,7 @@ function renderHomeRecent() {
   });
 }
 
-document.getElementById('home-new-chat').addEventListener('click', startNewChat);
+document.getElementById('home-new-chat').addEventListener('click', () => startNewChat());
 
 document.getElementById('home-view-all').addEventListener('click', e => {
   e.preventDefault();
@@ -272,9 +272,9 @@ async function loadHistory() {
   list.innerHTML = '<p class="empty-state">Loading…</p>';
 
   try {
-    // GET /api/history
+    // GET /api/chat
     // response: { success: true, data: { chats: [...], pagination: {...} } }
-    const res  = await fetch('/api/history', {
+    const res  = await fetch('/api/chat', {
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
     const json = await res.json();
@@ -373,7 +373,7 @@ async function loadDocuments() {
 
   try {
     // GET /api/documents
-    // response: { success: true, data: [{ _id, filename, mimeType, size, status, createdAt, chat }] }
+    // response: { success: true, data: { documents: [{ _id, filename, mimeType, size, status, createdAt, chat }] } }
     const res  = await fetch('/api/documents', {
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
@@ -381,7 +381,7 @@ async function loadDocuments() {
 
     if (!res.ok) throw new Error(json.message || 'Could not load documents');
 
-    const documents = json.data;
+    const documents = json.data.documents || [];
     loadingEl.classList.add('hidden');
 
     if (!documents.length) {
@@ -484,7 +484,7 @@ function startNewChat(initialMessage = null) {
   const empty = document.getElementById('chat-empty-state');
   if (empty) messages.appendChild(empty);
 
-  if (initialMessage) {
+  if (typeof initialMessage === 'string' && initialMessage.trim()) {
     const input = document.getElementById('chat-input');
     input.value = initialMessage;
     input.dispatchEvent(new Event('input'));
@@ -510,7 +510,7 @@ async function resumeSession(chatId) {
 
   // load past messages
   try {
-    const res  = await fetch('/api/history/' + chatId, {
+    const res  = await fetch('/api/chat/' + chatId, {
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
     const json = await res.json();
@@ -526,10 +526,13 @@ async function resumeSession(chatId) {
 
     // render each past message as bubbles
     // message shape: { query, response: { answer, citations }, status }
-    json.data.messages.forEach(msg => {
+    const chatHistory = json.data.chat?.messages || [];
+    const aiFormatter = window.formatAiResponse || ((text) => `<p>${escapeHtml(text)}</p>`);
+
+    chatHistory.forEach(msg => {
       appendHistoryBubble('user', escapeHtml(msg.query));
       if (msg.response && msg.response.answer) {
-        appendHistoryBubble('ai', window.formatAiResponse(msg.response.answer, msg.response.citations));
+        appendHistoryBubble('ai', aiFormatter(msg.response.answer, msg.response.citations));
       }
     });
 
@@ -558,8 +561,8 @@ function appendHistoryBubble(role, htmlContent) {
 // deleteSession — deletes a chat from the backend and refreshes history
 async function deleteSession(chatId) {
   try {
-    // DELETE /api/history/:chatId
-    const res = await fetch('/api/history/' + chatId, {
+    // DELETE /api/chat/:chatId
+    const res = await fetch('/api/chat/' + chatId, {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
