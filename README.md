@@ -8,10 +8,11 @@ This is the current baseline structure and will evolve over time as features are
 
 ```text
 public/
-  index.html
+    index.html
   css/
     styles.css
   js/
+    app.js
     chat.js
     upload.js
     socket.js
@@ -142,3 +143,29 @@ The frontend is a vanilla HTML/CSS/JavaScript application served from the `publi
 | `public/js/socket.js` | Manages the Socket.io connection. Authenticates with the session token from login and listens for `chat:response` events. |
 | `public/js/upload.js` | Handles drag and drop, client-side file validation (type, size, duplicates), and upload progress UI. |
 | `public/js/app.js` | Handles main functionality of the app flow states. |
+
+### Socket Events
+
+| Direction | Event | Payload |
+|-----------|-------|---------|
+| Server → Client | `chat:response` | `{ messageId, answer, citations?, sessionId? }` |
+| Server → Client | `chat:error` | `{ messageId, message, sessionId? }` |
+| Server → Client | `document:updated` | `{ documentId, status, filename?, chatId? }` |
+
+### API Endpoints (Frontend → Backend)
+
+| Method | Endpoint | Used by |
+|--------|----------|---------|
+| `POST` | `/api/auth/login` | Login form (`app.js`) |
+| `POST` | `/api/auth/register` | Register form (`app.js`) |
+| `POST` | `/api/auth/logout` | Logout (`app.js`) |
+
+| `POST` | `/api/chat` | Send message (`chat.js`) |
+
+| `POST` | `/api/documents/upload` | Upload file (`upload.js`) |
+| `GET` | `/api/documents` | Load documents page (`app.js`) |
+| `DELETE` | `/api/documents/:id` | Delete document (`app.js` + upload chip removal) |
+
+| `GET` | `/api/history` | Load chat history (`app.js`) |
+| `GET` | `/api/history/:chatId` | Load single conversation (`resumeSession`) |
+| `DELETE` | `/api/history/:chatId` | Delete conversation (`app.js`) |
