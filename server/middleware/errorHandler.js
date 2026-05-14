@@ -8,43 +8,18 @@ const errorHandler = (err, req, res, next) => {
     logger.error({ err }, err.message);
   }
 
+  let status = err.status || 500;
+  let code = err.code || "INTERNAL_SERVER_ERROR";
+
   // Multer-specific errors 
   if (err instanceof multer.MulterError) {
     // File too large
     if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: "File exceeds the 10MB size limit",
-          code: "LIMIT_FILE_SIZE",
-        },
-      });
+      status = 413; // Payload Too Large
+    } else {
+      status = 400; // Bad Request for other Multer errors
     }
-
-    // Other Multer errors (e.g. file upload issues)
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: err.message,
-        code: err.code || "UPLOAD_ERROR",
-      },
-    });
   }
-
-  // ── Custom file filter rejections (UNSUPPORTED_FILE_TYPE etc.) ────────
-  if (err.code === "UNSUPPORTED_FILE_TYPE") {
-    return res.status(415).json({
-      success: false,
-      error: {
-        message: err.message,
-        code: "UNSUPPORTED_FILE_TYPE",
-      },
-    });
-  }
-
-  // Default to 500 Internal Server Error if status is not set
-  const status = err.status || 500;
-  const code = err.code || "INTERNAL_SERVER_ERROR";
 
   // In development return the actual error message and stack
   // In production return a generic message so internals are never exposed

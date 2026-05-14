@@ -126,13 +126,13 @@ describe("POST /api/documents/upload/:chatId", () => {
     });
 
     // File too large — multer enforces the 10MB limit
-    it("should return 400 LIMIT_FILE_SIZE when file exceeds 10MB", async () => {
+    it("should return 413 LIMIT_FILE_SIZE when file exceeds 10MB", async () => {
         const res = await request(app)
             .post(`/api/documents/upload/${chatId}`)
             .set("Authorization", `Bearer ${token}`)
             .attach("document", fixturePath("oversized.pdf"));
 
-        expect(res.status).to.equal(400);
+        expect(res.status).to.equal(413);
         expect(res.body.error.code).to.equal("LIMIT_FILE_SIZE");
     });
 

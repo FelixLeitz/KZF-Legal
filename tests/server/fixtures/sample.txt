@@ -7,4 +7,4 @@ It contains realistic legal content to exercise the RAG ingestion pipeline.
 Sample query: What are the English language requirements for a UK Skilled
 Worker visa, and which tests are accepted by the Home Office?
 
-Generated: 2026-05-14T10:53:40.316Z
+Generated: 2026-05-14T11:02:52.637Z
