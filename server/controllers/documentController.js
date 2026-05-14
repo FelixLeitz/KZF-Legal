@@ -2,6 +2,13 @@ const documentService = require("../services/documentService");
 
 const uploadDocument = async (req, res, next) => {
   try {
+    if (!req.file) {
+      const error = new Error("No file uploaded. Please attach a file to the request.");
+      error.status = 400;
+      error.code = "NO_FILE_UPLOADED";
+      throw error;
+    }
+
     // Retrieve the authenticated user's ID, the chat ID and the uploaded file from the request object
     const userId = req.user.id;
     const file = req.file;

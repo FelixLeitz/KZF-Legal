@@ -1,5 +1,6 @@
 const logger = require("../utils/logger");
 const config = require("../config/env");
+const multer = require("multer");
 
 const errorHandler = (err, req, res, next) => {
   // Log the full error internally
@@ -7,9 +8,18 @@ const errorHandler = (err, req, res, next) => {
     logger.error({ err }, err.message);
   }
 
-  // Default to 500 Internal Server Error if status is not set
-  const status = err.status || 500;
-  const code = err.code || "INTERNAL_SERVER_ERROR";
+  let status = err.status || 500;
+  let code = err.code || "INTERNAL_SERVER_ERROR";
+
+  // Multer-specific errors 
+  if (err instanceof multer.MulterError) {
+    // File too large
+    if (err.code === "LIMIT_FILE_SIZE") {
+      status = 413; // Payload Too Large
+    } else {
+      status = 400; // Bad Request for other Multer errors
+    }
+  }
 
   // In development return the actual error message and stack
   // In production return a generic message so internals are never exposed
