@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const Document = require("../models/Document");
+const config = require("../config/env");
 const Chat = require("../models/Chat");
 const { fromFile } = require("file-type");
 const logger = require("../utils/logger");
@@ -57,7 +58,7 @@ const createDocument = async (file, userId, chatId) => {
     const chat = await Chat.findById(chatId);
 
     // chatId was provided but no matching chat exists
-    if (!chat) {
+    if (!chat || chat.user.toString() !== userId) {
       const error = new Error("Chat not found");
       error.status = 404;
       error.code = "NOT_FOUND";
@@ -160,7 +161,9 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
     });
   } catch (err) {
     // Log the error with contextual information for easier debugging
-    logger.error(`processDocument error for documentId ${documentId}:`, err);
+    if (config.NODE_ENV !== "test") {
+      logger.error(`processDocument error for documentId ${documentId}:`, err);
+    }
 
     try {
       // Update the document status to "failed" and store the error message for debugging purposes.
@@ -170,10 +173,12 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
       });
     } catch (updateErr) {
       // If updating the document status also fails, log that error as well.
-      logger.error(
-        `Failed to update document status to failed for documentId ${documentId}:`,
-        updateErr,
-      );
+      if (config.NODE_ENV !== "test") {
+        logger.error(
+          `Failed to update document status to failed for documentId ${documentId}:`,
+          updateErr,
+        );
+      }
     }
 
     // Emit the failure event to the client so they can inform the user and potentially allow them to retry or delete the document.

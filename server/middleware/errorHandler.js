@@ -1,10 +1,45 @@
 const logger = require("../utils/logger");
 const config = require("../config/env");
+const multer = require("multer");
 
 const errorHandler = (err, req, res, next) => {
   // Log the full error internally
   if (config.NODE_ENV !== "test") {
     logger.error({ err }, err.message);
+  }
+
+  // Multer-specific errors 
+  if (err instanceof multer.MulterError) {
+    // File too large
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: "File exceeds the 10MB size limit",
+          code: "LIMIT_FILE_SIZE",
+        },
+      });
+    }
+
+    // Other Multer errors (e.g. file upload issues)
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: err.message,
+        code: err.code || "UPLOAD_ERROR",
+      },
+    });
+  }
+
+  // ── Custom file filter rejections (UNSUPPORTED_FILE_TYPE etc.) ────────
+  if (err.code === "UNSUPPORTED_FILE_TYPE") {
+    return res.status(415).json({
+      success: false,
+      error: {
+        message: err.message,
+        code: "UNSUPPORTED_FILE_TYPE",
+      },
+    });
   }
 
   // Default to 500 Internal Server Error if status is not set
