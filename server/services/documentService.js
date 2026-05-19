@@ -8,7 +8,7 @@ const Chat = require("../models/Chat");
 const { fromFile } = require("file-type");
 const logger = require("../utils/logger");
 const { ALLOWED_MIME_TYPES } = require("../middleware/upload");
-// const ragService = require("./ragService");
+const ragService = require("../../rag/index");
 
 // Detect duplicate documents by computing a checksum of the file content
 const _computeChecksum = (filePath) =>
@@ -133,20 +133,9 @@ const createDocument = async (file, userId, chatId) => {
 
 const processDocument = async (documentId, userId, file_path, mimeType, io) => {
   try {
+    const filePath = path.join(__dirname, "..", file_path);
     // Ingest the document into the RAG pipeline to extract text, generate embeddings, and make it available for querying.
-    // const result = await ragService.ingestDocument({ userId, documentId, file_path, mimeType });
-
-    const result = {
-      chunks: 42,
-      extractedSummary:
-        "This document outlines the requirements for engineering occupations on the MLTSSL," +
-        " including the need for a positive skills assessment and accredited engineering degree programmes" +
-        " among signatory countries.",
-      meta: {
-        ingestMs: 980,
-      },
-    };
-
+    const result = await ragService.ingestDocument({ userId, documentId: documentId.toString(), filePath, mimeType });
     // Persist the extracted summary and mark as fully ingested
     await Document.findByIdAndUpdate(documentId, {
       extractedSummary: result.extractedSummary,

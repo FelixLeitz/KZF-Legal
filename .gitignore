@@ -16,7 +16,7 @@ rag/data/
 Thumbs.db
 
 # Oversized files
-tests/server/fixtures/oversized.pdf
+tests/server/fixtures/*
 
 # Server uploads (should be empty in repo)
 server/uploads/

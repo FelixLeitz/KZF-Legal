@@ -3,7 +3,7 @@ const Chat = require("../models/Chat");
 const Message = require("../models/Message");
 const logger = require("../utils/logger");
 const config = require("../config/env");
-// const submitQuery = require("../../rag/index").submitQuery;
+const ragService = require("../../rag/index");
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -62,49 +62,7 @@ const createPendingMessage = async (userId, query, chatId, documentIds) => {
 const processQuery = async (query, messageId, userId, documentIds, io) => {
   try {
     // Call the RAG service to process the query and retrieve an answer along with any relevant citations.
-    // const response = await ragService.submitQuery({userId, question: query, documentIds});
-
-    // DUMMY RESPONSE FOR TESTING - DELETE WHEN ACTUAL RAG SERVICE CALL IS IMPLEMENTED
-    const ragResult = {
-      answer:
-        "Yes. For most engineering occupations on the Medium and Long-term " +
-        "Strategic Skills List (MLTSSL), a positive skills assessment from " +
-        "Engineers Australia (EA) is a mandatory requirement before you can " +
-        "lodge an Expression of Interest through SkillSelect [[1]]. " +
-        "For a Civil Engineer (ANZSCO 233211), EA assesses your qualifications " +
-        "and work experience against Australian standards. A UK accredited " +
-        "degree from a Washington Accord signatory institution is generally " +
-        "recognised, which may simplify your assessment [[2]].",
-      citations: [
-        {
-          id: 1,
-          title: "Skills assessment for migration — Engineers Australia",
-          source: "web",
-          url: "https://www.engineersaustralia.org.au/skills-assessment",
-          snippet:
-            "A skills assessment from Engineers Australia is required for " +
-            "engineers seeking to migrate to Australia through the General " +
-            "Skilled Migration program.",
-        },
-        {
-          id: 2,
-          title: "Washington Accord — International Engineering Alliance",
-          source: "web",
-          url: "https://www.ieagreements.org/accords/washington/",
-          snippet:
-            "The Washington Accord recognises the substantial equivalence of " +
-            "accredited engineering degree programmes among signatory countries.",
-        },
-      ],
-      meta: {
-        latencyMs: 1234,
-        model: "claude-3-5-haiku-latest",
-        retrieval: {
-          vectorHits: 4,
-          webHits: 2,
-        },
-      },
-    };
+    const ragResult = await ragService.submitQuery({userId, question: query, documentIds: documentIds.map((id) => id.toString())});
 
     // Update the message in DB
     await Message.findByIdAndUpdate(
