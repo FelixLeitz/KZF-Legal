@@ -1,0 +1,74 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kfz-legal-app
+    restart: unless-stopped
+    # Ex
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo-main:27017/kfz-legal
+      - RAG_MONGODB_URI=mongodb://mongo-rag:27017/kfz-legal-rag
+      # Values that are parsed from env
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - EMBED_MODEL=${EMBED_MODEL:-text-embedding-3-small}
+      - LLM_MODEL=${LLM_MODEL:-claude-haiku-4-5}
+    depends_on:
+      mongo-main:
+        condition: service_healthy
+      mongo-rag:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Setup of main database
+  mongo-main:
+    image: mongo:7
+    container_name: mongo-main
+    restart: unless-stopped
+    volumes:
+      - mongo-main-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Setup of vector database used for Retrieval Augmented Generation
+  mongo-rag:
+    image: mongo:7
+    container_name: mongo-rag
+    restart: unless-stopped
+    volumes:
+      - mongo-rag-data:/data/db
+    # different host port to avoid collision (when we wanna access that one from outside the container)
+    ports:
+      - "27018:27017" 
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  mongo-main-data:
+  mongo-rag-data:
+
+# Setup network for cross-container communication
+networks:
+  app-network:
+    driver: bridge
