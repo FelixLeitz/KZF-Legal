@@ -76,7 +76,7 @@ The app will be running on port 3000. Access of the student endpoint (either man
 
 Testing the core application functionality using the database:
 - Visit http://localhost:3000/ 
-- Register an account and Log in
+- Register an account and Log in (Note that the password requirements are min 8 chars with uppercase, lowercase, number and special char)
 - Type Hello World on the home page and click on the Send button
 - Wait for the AI response
 - Use the button in the bottom left to upload the Subclass_500.pdf document from the main repository page as information for the RAG sevice to use
