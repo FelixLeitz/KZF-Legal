@@ -46,7 +46,7 @@ docker compose up -d
 ```
 
 The app will now be running in the background. You can access it at:
-**`http://localhost:<port>`** *(replace `<port>` with the port defined in `docker-compose.yml`)*
+**`http://localhost:3000`** 
 
 #### 3. View live logs
 
