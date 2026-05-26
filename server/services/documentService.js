@@ -151,8 +151,7 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
   } catch (err) {
     // Log the error with contextual information for easier debugging
     if (config.NODE_ENV !== "test") {
-      console.log(err);
-      logger.error(`processDocument error for documentId ${documentId}:`, err);
+      logger.error({err}, err.message);
     }
 
     try {
@@ -165,8 +164,8 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
       // If updating the document status also fails, log that error as well.
       if (config.NODE_ENV !== "test") {
         logger.error(
-          `Failed to update document status to failed for documentId ${documentId}:`,
-          updateErr,
+          {err: updateErr},
+          updateErr.message
         );
       }
     }
