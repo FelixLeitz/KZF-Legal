@@ -151,6 +151,7 @@ const processDocument = async (documentId, userId, file_path, mimeType, io) => {
   } catch (err) {
     // Log the error with contextual information for easier debugging
     if (config.NODE_ENV !== "test") {
+      console.log(err);
       logger.error(`processDocument error for documentId ${documentId}:`, err);
     }
 
